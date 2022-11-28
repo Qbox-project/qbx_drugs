@@ -1,9 +1,6 @@
 fx_version 'cerulean'
 game 'gta5'
 
-description 'QB-Drugs'
-version '1.0.0'
-
 shared_scripts{
     'config.lua',
     '@qb-core/shared/locale.lua',

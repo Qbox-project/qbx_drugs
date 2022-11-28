@@ -11,7 +11,7 @@ local function getAvailableDrugs(source)
             AvailableDrugs[#AvailableDrugs + 1] = {
                 item = item.name,
                 amount = item.amount,
-                label = QBCore.Shared.Items[item.name]["label"]
+                label = QBCore.Shared.Items[item.name].label
             }
         end
     end
@@ -23,8 +23,9 @@ QBCore.Functions.CreateCallback('qb-drugs:server:cornerselling:getAvailableDrugs
 end)
 
 RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
-    local availableDrugs = getAvailableDrugs(source)
-    local Player = QBCore.Functions.GetPlayer(source)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local availableDrugs = getAvailableDrugs(src)
 
     if not availableDrugs or not Player then return end
 
@@ -39,13 +40,14 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
     if not availableDrugs or not Player then return end
 
     local item = availableDrugs[drugType].item
-
     local hasItem = Player.Functions.GetItemByName(item)
+
     if hasItem.amount >= amount then
         TriggerClientEvent('QBCore:Notify', src, Lang:t("success.offer_accepted"), 'success')
+
         Player.Functions.RemoveItem(item, amount)
         Player.Functions.AddMoney('cash', price, "sold-cornerdrugs")
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
+
         TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
     else
         TriggerClientEvent('qb-drugs:client:cornerselling', src)
@@ -62,6 +64,6 @@ RegisterNetEvent('qb-drugs:server:robCornerDrugs', function(drugType, amount)
     local item = availableDrugs[drugType].item
 
     Player.Functions.RemoveItem(item, amount)
-    TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
+
     TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
 end)

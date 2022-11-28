@@ -1,4 +1,5 @@
 Config = Config or {}
+
 Config.Dealers = {}
 Config.UseTarget = GetConvar('UseTarget', 'false') == 'true'
 Config.PoliceCallChance = 15
@@ -12,7 +13,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 1,
-        minrep = 0,
+        minrep = 0
     },
     [2] = {
         name = "weed_skunk",
@@ -21,7 +22,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 2,
-        minrep = 20,
+        minrep = 20
     },
     [3] = {
         name = "weed_purple-haze",
@@ -30,7 +31,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 3,
-        minrep = 40,
+        minrep = 40
     },
     [4] = {
         name = "weed_og-kush",
@@ -39,7 +40,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 4,
-        minrep = 60,
+        minrep = 60
     },
     [5] = {
         name = "weed_amnesia",
@@ -48,7 +49,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 5,
-        minrep = 80,
+        minrep = 80
     },
     [6] = {
         name = "weed_white-widow_seed",
@@ -57,7 +58,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 6,
-        minrep = 100,
+        minrep = 100
     },
     [7] = {
         name = "weed_skunk_seed",
@@ -66,7 +67,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 7,
-        minrep = 120,
+        minrep = 120
     },
     [8] = {
         name = "weed_purple-haze_seed",
@@ -75,7 +76,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 8,
-        minrep = 140,
+        minrep = 140
     },
     [9] = {
         name = "weed_og-kush_seed",
@@ -84,7 +85,7 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 9,
-        minrep = 160,
+        minrep = 160
     },
     [10] = {
         name = "weed_amnesia_seed",
@@ -93,8 +94,8 @@ Config.Products = {
         info = {},
         type = "item",
         slot = 10,
-        minrep = 180,
-    },
+        minrep = 180
+    }
 }
 
 -- Selling Config
@@ -118,39 +119,39 @@ Config.CornerSellingDrugsList = {
 Config.DrugsPrice = {
     ["weed_white-widow"] = {
         min = 15,
-        max = 24,
+        max = 24
     },
     ["weed_og-kush"] = {
         min = 15,
-        max = 28,
+        max = 28
     },
     ["weed_skunk"] = {
         min = 15,
-        max = 31,
+        max = 31
     },
     ["weed_amnesia"] = {
         min = 18,
-        max = 34,
+        max = 34
     },
     ["weed_purple-haze"] = {
         min = 18,
-        max = 37,
+        max = 37
     },
     ["weed_ak47"] = {
         min = 18,
-        max = 40,
+        max = 40
     },
     ["crack_baggy"] = {
         min = 18,
-        max = 34,
+        max = 34
     },
     ["cokebaggy"] = {
         min = 18,
-        max = 37,
+        max = 37
     },
     ["meth"] = {
         min = 18,
-        max = 40,
+        max = 40
     },
 }
 
@@ -164,36 +165,36 @@ Config.OverdueDeliveryFee = 4 -- divide the payout by this value for overdue del
 
 Config.DeliveryItems = {
     [1] = {
-        ["item"] = "weed_brick",
-        ["minrep"] = 0,
-        ['payout'] = 1000
+        item = "weed_brick",
+        minrep = 0,
+        payout = 1000
     },
     [2] = {
-        ["item"] = "coke_brick",
-        ["minrep"] = 0,
-        ['payout'] = 1000
+        item = "coke_brick",
+        minrep = 0,
+        payout = 1000
     },
 }
 
 Config.DeliveryLocations = {
     [1] = {
-        ["label"] = "Stripclub",
-        ["coords"] = vector3(106.24, -1280.32, 29.24),
+        label = "Stripclub",
+        coords = vec3(106.24, -1280.32, 29.24)
     },
     [2] = {
-        ["label"] = "Vinewood Video",
-        ["coords"] = vector3(223.98, 121.53, 102.76),
+        label = "Vinewood Video",
+        coords = vec3(223.98, 121.53, 102.76)
     },
     [3] = {
-        ["label"] = "Taxi",
-        ["coords"] = vector3(882.67, -160.26, 77.11),
+        label = "Taxi",
+        coords = vec3(882.67, -160.26, 77.11)
     },
     [4] = {
-        ["label"] = "Resort",
-        ["coords"] = vector3(-1245.63, 376.21, 75.34),
+        label = "Resort",
+        coords = vec3(-1245.63, 376.21, 75.34)
     },
     [5] = {
-        ["label"] = "Bahama Mamas",
-        ["coords"] = vector3(-1383.1, -639.99, 28.67),
-    },
+        label = "Bahama Mamas",
+        coords = vec3(-1383.1, -639.99, 28.67)
+    }
 }
