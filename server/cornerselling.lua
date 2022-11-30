@@ -2,7 +2,9 @@ local function getAvailableDrugs(source)
     local AvailableDrugs = {}
     local Player = QBCore.Functions.GetPlayer(source)
 
-    if not Player then return nil end
+    if not Player then
+        return nil
+    end
 
     for i = 1, #Config.CornerSellingDrugsList do
         local item = Player.Functions.GetItemByName(Config.CornerSellingDrugsList[i])
@@ -15,6 +17,7 @@ local function getAvailableDrugs(source)
             }
         end
     end
+
     return table.type(AvailableDrugs) ~= "empty" and AvailableDrugs or nil
 end
 
@@ -27,7 +30,9 @@ RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
     local Player = QBCore.Functions.GetPlayer(src)
     local availableDrugs = getAvailableDrugs(src)
 
-    if not availableDrugs or not Player then return end
+    if not availableDrugs or not Player then
+        return
+    end
 
     Player.Functions.AddItem(availableDrugs[drugType].item, amount)
 end)
@@ -37,13 +42,18 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
     local Player = QBCore.Functions.GetPlayer(src)
     local availableDrugs = getAvailableDrugs(src)
 
-    if not availableDrugs or not Player then return end
+    if not availableDrugs or not Player then
+        return
+    end
 
     local item = availableDrugs[drugType].item
     local hasItem = Player.Functions.GetItemByName(item)
 
     if hasItem.amount >= amount then
-        TriggerClientEvent('QBCore:Notify', src, Lang:t("success.offer_accepted"), 'success')
+        TriggerClientEvent('ox_lib:notify', src, {
+            description = Lang:t("success.offer_accepted"),
+            type = 'success'
+        })
 
         Player.Functions.RemoveItem(item, amount)
         Player.Functions.AddMoney('cash', price, "sold-cornerdrugs")
@@ -59,7 +69,9 @@ RegisterNetEvent('qb-drugs:server:robCornerDrugs', function(drugType, amount)
     local Player = QBCore.Functions.GetPlayer(src)
     local availableDrugs = getAvailableDrugs(src)
 
-    if not availableDrugs or not Player then return end
+    if not availableDrugs or not Player then
+        return
+    end
 
     local item = availableDrugs[drugType].item
 
