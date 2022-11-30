@@ -214,14 +214,14 @@ end, "admin")
 QBCore.Commands.Add("dealers", Lang:t("info.dealers_command_desc"), {}, false, function(source, _)
     local DealersText = ""
 
-    if Config.Dealers ~= nil and next(Config.Dealers) ~= nil then
+    if Config.Dealers  and next(Config.Dealers) then
         for _, v in pairs(Config.Dealers) do
             DealersText = DealersText .. Lang:t("info.list_dealers_name_prefix") .. v.name .. "<br>"
         end
 
-        TriggerClientEvent('chat:addMessage', source, {
-            template = '<div class="chat-message advert"><div class="chat-message-body"><strong>' .. Lang:t("info.list_dealers_title") .. '</strong><br><br> ' .. DealersText .. '</div></div>',
-            args = {}
+        lib.notify({
+            title = Lang:t("info.list_dealers_title"),
+            description = DealersText
         })
     else
         TriggerClientEvent('QBCore:Notify', source, Lang:t("error.no_dealers"), 'error')

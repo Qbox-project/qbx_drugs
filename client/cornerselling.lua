@@ -368,7 +368,7 @@ local function ToggleSelling()
                 if not hasTarget then
                     local PlayerPeds = {}
 
-                    if next(PlayerPeds) == nil then
+                    if not next(PlayerPeds) then
                         for _, activePlayer in ipairs(GetActivePlayers()) do
                             local ped = GetPlayerPed(activePlayer)
 

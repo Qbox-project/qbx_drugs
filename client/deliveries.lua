@@ -5,8 +5,9 @@ local waitingDelivery = nil
 local activeDelivery = nil
 local deliveryTimeout = 0
 local waitingKeyPress = false
-local dealerCombo
-local drugDeliveryZone
+local drugDeliveryZone = nil
+local inDeliveryZone = false
+local dealerPoly = {}
 
 -- Handlers
 AddStateBagChangeHandler('isLoggedIn', nil, function(_, _, value)
@@ -19,8 +20,10 @@ AddStateBagChangeHandler('isLoggedIn', nil, function(_, _, value)
 
         InitZones()
     else
-        if not Config.UseTarget and dealerCombo then
-            dealerCombo:remove()
+        if not Config.UseTarget then
+            for k, _ in pairs(Config.Dealers) do
+                dealerPoly[k]:remove()
+            end
         end
     end
 end)
@@ -80,15 +83,15 @@ local function KnockDoorAnim(home)
 
         dealerIsHome = true
 
-        TriggerEvent('chat:addMessage', {
-            color = {255, 0, 0},
-            multiline = true,
-            args = {
-                Lang:t("info.dealer_name", {dealerName = Config.Dealers[currentDealer]["name"]}),
-                Lang:t("info.fred_knock_message", {firstName = myData.charinfo.firstname})
-            }
+        lib.notify({
+            title = Lang:t("info.dealer_name", {
+                dealerName = Config.Dealers[currentDealer].name
+            }),
+            description = Lang:t("info.fred_knock_message", {
+                firstName = myData.charinfo.firstname
+            }),
+            type = 'error'
         })
-
         lib.showTextUI(Lang:t("info.other_dealers_button"))
 
         AwaitingInput()
@@ -141,7 +144,7 @@ local function RandomDeliveryItemOnRep()
     local availableItems = {}
 
     for k, _ in pairs(Config.DeliveryItems) do
-        if Config.DeliveryItems[k]["minrep"] <= myRep then
+        if Config.DeliveryItems[k].minrep <= myRep then
             availableItems[#availableItems + 1] = k
         end
     end
@@ -299,6 +302,7 @@ function InitZones()
                             local hours = GetClockHours()
                             local min = Config.Dealers[currentDealer]["time"]["min"]
                             local max = Config.Dealers[currentDealer]["time"]["max"]
+
                             if max < min then
                                 if hours <= max then
                                     if not waitingDelivery then
@@ -329,6 +333,7 @@ function InitZones()
                             local hours = GetClockHours()
                             local min = Config.Dealers[currentDealer]["time"]["min"]
                             local max = Config.Dealers[currentDealer]["time"]["max"]
+
                             if max < min then
                                 if hours <= max then
                                     return true
@@ -347,42 +352,44 @@ function InitZones()
             })
         end
     else
-        local dealerPoly = {}
+        for k, v in pairs(Config.Dealers) do
+            dealerPoly[k] = lib.zones.box({
+                coords = v.coords,
+                size = vec3(1.5, 1.5, 1.5),
+                rotation = -20,
+                onEnter = function(_)
+                    if not dealerIsHome then
+                        lib.showTextUI(Lang:t("info.knock_button"))
 
-        for k,v in pairs(Config.Dealers) do
-            dealerPoly[#dealerPoly + 1] = BoxZone:Create(vec3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
-                heading = -20,
-                name="dealer_"..k,
-                minZ = v.coords.z - 1,
-                maxZ = v.coords.z + 1
-            })
-            dealerCombo = ComboZone:Create(dealerPoly, {name = "dealerPoly"})
-        end
+                        AwaitingInput()
+                    elseif dealerIsHome then
+                        lib.showTextUI(Lang:t("info.other_dealers_button"))
 
-        dealerCombo:onPlayerInOut(function(isPointInside)
-            if isPointInside then
-                if not dealerIsHome then
-                    lib.showTextUI(Lang:t("info.knock_button"))
+                        AwaitingInput()
+                    end
+                end,
+                onExit = function(_)
+                    if not dealerIsHome then
+                        lib.showTextUI(Lang:t("info.knock_button"))
 
-                    AwaitingInput()
-                elseif dealerIsHome then
-                    lib.showTextUI(Lang:t("info.other_dealers_button"))
+                        AwaitingInput()
+                    elseif dealerIsHome then
+                        waitingKeyPress = false
 
-                    AwaitingInput()
+                        lib.hideTextUI()
+                    end
                 end
-            else
-                waitingKeyPress = false
-
-                lib.hideTextUI()
-            end
-        end)
+            })
+        end
     end
 end
 
 -- Events
 RegisterNetEvent('qb-drugs:client:RefreshDealers', function(DealerData)
-    if not Config.UseTarget and dealerCombo then
-        dealerCombo:remove()
+    if not Config.UseTarget then
+        for k, _ in pairs(Config.Dealers) do
+            dealerPoly[k]:remove()
+        end
     end
 
     Config.Dealers = DealerData
@@ -406,10 +413,13 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
         QBCore.Functions.Notify(Lang:t("error.pending_delivery"), 'error')
         return
     end
+
     activeDelivery = locationData
     deliveryTimeout = 300
+
     DeliveryTimer()
     SetMapBlip(activeDelivery["coords"]["x"], activeDelivery["coords"]["y"])
+
     if Config.UseTarget then
         exports["qb-target"]:AddBoxZone('drugDeliveryZone', vec3(activeDelivery["coords"].x, activeDelivery["coords"].y, activeDelivery["coords"].z), 1.5, 1.5, {
             name = 'drugDeliveryZone',
@@ -435,15 +445,12 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
             distance = 1.5
         })
     else
-        drugDeliveryZone = BoxZone:Create(vec3(activeDelivery["coords"].x, activeDelivery["coords"].y, activeDelivery["coords"].z), 1.5, 1.5, {
-            heading = 0,
-            name = "drugDelivery",
-            minZ = activeDelivery["coords"].z - 1,
-            maxZ = activeDelivery["coords"].z + 1
-        })
-        drugDeliveryZone:onPlayerInOut(function(isPointInside)
-            if isPointInside then
-                local inDeliveryZone = true
+        drugDeliveryZone = lib.zones.box({
+            coords = activeDelivery.coords,
+            size = vec3(1.5, 1.5, 1.5),
+            rotation = 0.0,
+            onEnter = function(_)
+                inDeliveryZone = true
 
                 lib.showTextUI(Lang:t("info.deliver_items_button", {itemAmount = activeDelivery["amount"], itemLabel = QBCore.Shared.Items[activeDelivery["itemData"]["item"]]["label"]}))
 
@@ -459,12 +466,13 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
                         Wait(0)
                     end
                 end)
-            else
+            end,
+            onExit = function(_)
                 inDeliveryZone = false
 
                 lib.hideTextUI()
             end
-        end)
+        })
     end
 end)
 
