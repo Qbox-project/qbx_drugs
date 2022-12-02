@@ -10,7 +10,7 @@ local inDeliveryZone = false
 local dealerPoly = {}
 
 -- Handlers
-AddStateBagChangeHandler('isLoggedIn', nil, function(_, _, value)
+AddStateBagChangeHandler('isLoggedIn', nil, function(_, _, value, _, _)
     if value then
         QBCore.Functions.TriggerCallback('qb-drugs:server:RequestConfig', function(DealerConfig)
             Config.Dealers = DealerConfig
@@ -111,7 +111,10 @@ local function KnockDoorAnim(home)
 
         Wait(1000)
 
-        QBCore.Functions.Notify(Lang:t("info.no_one_home"), 'error')
+        lib.notify({
+            description = Lang:t("info.no_one_home"),
+            type = 'error'
+        })
     end
 end
 
@@ -169,7 +172,10 @@ local function RequestDelivery()
             item = item
         }
 
-        QBCore.Functions.Notify(Lang:t("info.sending_delivery_email"), 'success')
+        lib.notify({
+            description = Lang:t("info.sending_delivery_email"),
+            type = 'success'
+        })
 
         TriggerServerEvent('qb-drugs:server:giveDeliveryItems', waitingDelivery)
 
@@ -186,7 +192,10 @@ local function RequestDelivery()
             })
         end)
     else
-        QBCore.Functions.Notify(Lang:t("error.pending_delivery"), 'error')
+        lib.notify({
+            description = Lang:t("error.pending_delivery"),
+            type = 'error'
+        })
     end
 end
 
@@ -216,12 +225,17 @@ local function DeliverStuff()
 
         PoliceCall()
 
-        QBCore.Functions.Progressbar("work_dropbox", Lang:t("info.delivering_products"), 3500, false, true, {
-            disableMovement = true,
-            disableCarMovement = true,
-            disableMouse = false,
-            disableCombat = true
-        }, {}, {}, {}, function() -- Done
+        if lib.progressBar({
+            duration = 3500,
+            label = Lang:t("info.delivering_products"),
+            useWhileDead = false,
+            canCancel = true,
+            disable = {
+                move = true,
+                car = true,
+                combat = true
+            }
+        }) then
             TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, true)
 
             activeDelivery = nil
@@ -231,9 +245,9 @@ local function DeliverStuff()
             else
                 drugDeliveryZone:remove()
             end
-        end, function() -- Cancel
+        else
             ClearPedTasks(cache.ped)
-        end)
+        end
     else
         TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, false)
     end
@@ -244,7 +258,10 @@ end
 local function SetMapBlip(x, y)
     SetNewWaypoint(x, y)
 
-    QBCore.Functions.Notify(Lang:t("success.route_has_been_set"), 'success');
+    lib.notify({
+        description = Lang:t("success.route_has_been_set"),
+        type = 'success'
+    })
 end
 
 -- Zone specific functions
@@ -409,8 +426,12 @@ end)
 
 RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
     if activeDelivery then
-        SetMapBlip(activeDelivery["coords"]["x"], activeDelivery["coords"]["y"])
-        QBCore.Functions.Notify(Lang:t("error.pending_delivery"), 'error')
+        SetMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
+
+        lib.notify({
+            description = Lang:t("error.pending_delivery"),
+            type = 'error'
+        })
         return
     end
 
@@ -418,7 +439,7 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
     deliveryTimeout = 300
 
     DeliveryTimer()
-    SetMapBlip(activeDelivery["coords"]["x"], activeDelivery["coords"]["y"])
+    SetMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
 
     if Config.UseTarget then
         exports["qb-target"]:AddBoxZone('drugDeliveryZone', vec3(activeDelivery["coords"].x, activeDelivery["coords"].y, activeDelivery["coords"].z), 1.5, 1.5, {
@@ -429,7 +450,7 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
         }, {
             options = {
                 {
-                    icon = 'fas fa-user-secret',
+                    icon = "fa-solid fa-user-secret",
                     label = Lang:t("info.target_deliver"),
                     action = function()
                         DeliverStuff()
