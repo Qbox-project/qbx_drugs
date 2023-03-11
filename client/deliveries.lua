@@ -10,6 +10,7 @@ local drugDeliveryZone
 
 -- Handlers
 
+---@diagnostic disable-next-line: param-type-mismatch
 AddStateBagChangeHandler('isLoggedIn', nil, function(_, _, value)
     if value then
         QBCore.Functions.TriggerCallback('qb-drugs:server:RequestConfig', function(DealerConfig)
@@ -310,7 +311,7 @@ function InitZones()
         end
     else
         local dealerPoly = {}
-        for k,v in pairs(Config.Dealers) do
+        for k, v in pairs(Config.Dealers) do
             dealerPoly[#dealerPoly+1] = BoxZone:Create(vector3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
                 heading = -20,
                 name="dealer_"..k,
@@ -318,8 +319,11 @@ function InitZones()
                 minZ = v.coords.z - 1,
                 maxZ = v.coords.z + 1,
             })
-            dealerCombo = ComboZone:Create(dealerPoly, {name = "dealerPoly"})
         end
+
+        if table.type(dealerPoly) == 'empty' then return end
+
+        dealerCombo = ComboZone:Create(dealerPoly, {name = "dealerPoly"})
         dealerCombo:onPlayerInOut(function(isPointInside)
             if isPointInside then
                 if not dealerIsHome then
