@@ -27,7 +27,7 @@ end
 
 local function PoliceCall()
     if Config.PoliceCallChance <= math.random(1, 100) then
-        exports['ps-dispatch']:DrugSale()
+        TriggerServerEvent('police:server:policeAlert', 'Drug sale in progress')
     end
 end
 
@@ -36,7 +36,7 @@ local function RobberyPed()
         targetStealingPed = NetworkGetNetworkIdFromEntity(stealingPed)
         local options = {
             {
-                name = 'ox:option1',
+                name = 'stealingped',
                 icon = 'fas fa-magnifying-glass',
                 label = Lang:t("info.search_ped"),
                 onSelect = function()
@@ -52,10 +52,10 @@ local function RobberyPed()
                     TriggerEvent('inventory:client:ItemBox', QBCore.Shared.Items[stealData.item], "add")
                     stealingPed = nil
                     stealData = {}
-                    exports.ox_target:removeEntity(targetStealingPed, 'ox:option1')
+                    exports.ox_target:removeEntity(targetStealingPed, 'stealingped')
                 end,
-                canInteract = function(entity)
-                    if IsEntityDead(entity) then
+                canInteract = function()
+                    if IsEntityDead(stealingPed) then
                         return true
                     end
                 end
@@ -71,7 +71,7 @@ local function RobberyPed()
                 if dist > 100 then
                     stealingPed = nil
                     stealData = {}
-                    exports.ox_target:removeEntity(targetStealingPed, 'ox:option1')
+                    exports.ox_target:removeEntity(targetStealingPed, 'stealingped')
                     break
                 end
                 Wait(0)
@@ -202,10 +202,10 @@ local function SellToPed(ped)
                     if Config.UseTarget and not zoneMade then
                         zoneMade = true
                         targetPedSale = NetworkGetNetworkIdFromEntity(ped)
-                        optionNamesTargetPed = {'ox:option1', 'ox:option2'}
+                        optionNamesTargetPed = {'selldrugs', 'declineoffer'}
                         local options = {
                             {
-                                name = 'ox:option1',
+                                name = 'selldrugs',
                                 icon = 'fas fa-hand-holding-dollar',
                                 label = Lang:t("info.target_drug_offer", {bags = bagAmount, drugLabel = currentOfferDrug.label, randomPrice = randomPrice}),
                                 onSelect = function()
@@ -224,9 +224,9 @@ local function SellToPed(ped)
                                 end,
                             },
                             {
-                                name = 'ox:option2',
+                                name = 'declineoffer',
                                 icon = 'fas fa-x',
-                                label = 'Decline offer',
+                                label = Lang:t('info.decline_offer'),
                                 onSelect = function()
                                     QBCore.Functions.Notify(Lang:t("error.offer_declined"), 'error')
                                     hasTarget = false
