@@ -27,54 +27,51 @@ end
 
 local function PoliceCall()
     if Config.PoliceCallChance <= math.random(1, 100) then
-        TriggerServerEvent('police:server:policeAlert', 'Drug sale in progress')
+        exports['ps-dispatch']:DrugSale()
     end
 end
 
 local function RobberyPed()
     if Config.UseTarget then
-        exports['qb-target']:AddEntityZone('stealingPed', stealingPed, {
-            name = 'stealingPed',
-            debugPoly = false,
-        }, {
-            options = {
-                {
-                    icon = 'fas fa-magnifying-glass',
-                    label = Lang:t("info.search_ped"),
-                    action = function()
-                        local player = PlayerPedId()
-                        RequestAnimDict("pickup_object")
-                        while not HasAnimDictLoaded("pickup_object") do
-                            Wait(0)
-                        end
-                        TaskPlayAnim(player, "pickup_object", "pickup_low", 8.0, -8.0, -1, 1, 0, false, false, false)
-                        Wait(2000)
-                        ClearPedTasks(player)
-                        TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
-                        TriggerEvent('inventory:client:ItemBox', QBCore.Shared.Items[stealData.item], "add")
-                        stealingPed = nil
-                        stealData = {}
-                        exports['qb-target']:RemoveZone('stealingPed')
-                    end,
-                    canInteract = function(entity)
-                        if IsEntityDead(entity) then
-                            return true
-                        end
+        targetStealingPed = NetworkGetNetworkIdFromEntity(stealingPed)
+        local options = {
+            {
+                name = 'ox:option1',
+                icon = 'fas fa-magnifying-glass',
+                label = Lang:t("info.search_ped"),
+                onSelect = function()
+                    local player = cache.ped
+                    RequestAnimDict("pickup_object")
+                    while not HasAnimDictLoaded("pickup_object") do
+                        Wait(0)
                     end
-                }
-            },
-            distance = 1.5,
-        })
+                    TaskPlayAnim(player, "pickup_object", "pickup_low", 8.0, -8.0, -1, 1, 0, false, false, false)
+                    Wait(2000)
+                    ClearPedTasks(player)
+                    TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
+                    TriggerEvent('inventory:client:ItemBox', QBCore.Shared.Items[stealData.item], "add")
+                    stealingPed = nil
+                    stealData = {}
+                    exports.ox_target:removeEntity(targetStealingPed, 'ox:option1')
+                end,
+                canInteract = function(entity)
+                    if IsEntityDead(entity) then
+                        return true
+                    end
+                end
+            }
+        }
+        exports.ox_target:addEntity(targetStealingPed, options)
         CreateThread(function()
             while stealingPed do
-                local playerPed = PlayerPedId()
+                local playerPed = cache.ped
                 local pos = GetEntityCoords(playerPed)
                 local pedpos = GetEntityCoords(stealingPed)
                 local dist = #(pos - pedpos)
                 if dist > 100 then
                     stealingPed = nil
                     stealData = {}
-                    exports['qb-target']:RemoveZone('stealingPed')
+                    exports.ox_target:removeEntity(targetStealingPed, 'ox:option1')
                     break
                 end
                 Wait(0)
@@ -84,7 +81,7 @@ local function RobberyPed()
         CreateThread(function()
             while stealingPed do
                 if IsEntityDead(stealingPed) then
-                    local playerPed = PlayerPedId()
+                    local playerPed = cache.ped
                     local pos = GetEntityCoords(playerPed)
                     local pedpos = GetEntityCoords(stealingPed)
                     if not Config.UseTarget and #(pos - pedpos) < 1.5 then
@@ -109,7 +106,7 @@ local function RobberyPed()
                         end
                     end
                 else
-                    local playerPed = PlayerPedId()
+                    local playerPed = cache.ped
                     local pos = GetEntityCoords(playerPed)
                     local pedpos = GetEntityCoords(stealingPed)
                     if #(pos - pedpos) > 100 then
@@ -152,7 +149,7 @@ local function SellToPed(ped)
     SetEntityAsNoLongerNeeded(ped)
     ClearPedTasks(ped)
 
-    local coords = GetEntityCoords(PlayerPedId(), true)
+    local coords = GetEntityCoords(cache.ped, true)
     local pedCoords = GetEntityCoords(ped)
     local pedDist = #(coords - pedCoords)
     if getRobbed <= Config.RobberyChance then
@@ -162,7 +159,7 @@ local function SellToPed(ped)
     end
 
     while pedDist > 1.5 do
-        coords = GetEntityCoords(PlayerPedId(), true)
+        coords = GetEntityCoords(cache.ped, true)
         pedCoords = GetEntityCoords(ped)
         if getRobbed <= Config.RobberyChance then
             TaskGoStraightToCoord(ped, coords, 15.0, -1, 0.0, 0.0)
@@ -174,13 +171,13 @@ local function SellToPed(ped)
         Wait(100)
     end
 
-    TaskLookAtEntity(ped, PlayerPedId(), 5500.0, 2048, 3)
-    TaskTurnPedToFaceEntity(ped, PlayerPedId(), 5500)
+    TaskLookAtEntity(ped, cache.ped, 5500.0, 2048, 3)
+    TaskTurnPedToFaceEntity(ped, cache.ped, 5500)
     TaskStartScenarioInPlace(ped, "WORLD_HUMAN_STAND_IMPATIENT_UPRIGHT", 0, false)
 
     if hasTarget then
         while pedDist < 1.5 and not IsPedDeadOrDying(ped) do
-            local coords2 = GetEntityCoords(PlayerPedId(), true)
+            local coords2 = GetEntityCoords(cache.ped, true)
             local pedCoords2 = GetEntityCoords(ped)
             local pedDist2 = #(coords2 - pedCoords2)
             if getRobbed <= Config.RobberyChance then
@@ -193,7 +190,7 @@ local function SellToPed(ped)
                     amount = bagAmount,
                 }
                 hasTarget = false
-                local moveto = GetEntityCoords(PlayerPedId())
+                local moveto = GetEntityCoords(cache.ped)
                 local movetoCoords = {x = moveto.x + math.random(100, 500), y = moveto.y + math.random(100, 500), z = moveto.z, }
                 ClearPedTasksImmediately(ped)
                 TaskGoStraightToCoord(ped, movetoCoords.x, movetoCoords.y, movetoCoords.z, 15.0, -1, 0.0, 0.0)
@@ -204,45 +201,44 @@ local function SellToPed(ped)
                 if pedDist2 < 1.5 and cornerselling then
                     if Config.UseTarget and not zoneMade then
                         zoneMade = true
-                        exports['qb-target']:AddEntityZone('sellingPed', ped, {
-                            name = 'sellingPed',
-                            debugPoly = false,
-                        }, {
-                            options = {
-                                {
-                                    icon = 'fas fa-hand-holding-dollar',
-                                    label = Lang:t("info.target_drug_offer", {bags = bagAmount, drugLabel = currentOfferDrug.label, randomPrice = randomPrice}),
-                                    action = function(entity)
-                                        TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
-                                        hasTarget = false
-                                        LoadAnimDict("gestures@f@standing@casual")
-                                        TaskPlayAnim(PlayerPedId(), "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, 0, 0, 0)
-                                        Wait(650)
-                                        ClearPedTasks(PlayerPedId())
-                                        SetPedKeepTask(entity, false)
-                                        SetEntityAsNoLongerNeeded(entity)
-                                        ClearPedTasksImmediately(entity)
-                                        lastPed[#lastPed + 1] = entity
-                                        exports['qb-target']:RemoveZone('sellingPed')
-                                        PoliceCall()
-                                    end,
-                                },
-                                {
-                                    icon = 'fas fa-x',
-                                    label = 'Decline offer',
-                                    action = function(entity)
-                                        QBCore.Functions.Notify(Lang:t("error.offer_declined"), 'error')
-                                        hasTarget = false
-                                        SetPedKeepTask(entity, false)
-                                        SetEntityAsNoLongerNeeded(entity)
-                                        ClearPedTasksImmediately(entity)
-                                        lastPed[#lastPed + 1] = entity
-                                        exports['qb-target']:RemoveZone('sellingPed')
-                                    end,
-                                },
+                        targetPedSale = NetworkGetNetworkIdFromEntity(ped)
+                        optionNamesTargetPed = {'ox:option1', 'ox:option2'}
+                        local options = {
+                            {
+                                name = 'ox:option1',
+                                icon = 'fas fa-hand-holding-dollar',
+                                label = Lang:t("info.target_drug_offer", {bags = bagAmount, drugLabel = currentOfferDrug.label, randomPrice = randomPrice}),
+                                onSelect = function()
+                                    TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
+                                    hasTarget = false
+                                    LoadAnimDict("gestures@f@standing@casual")
+                                    TaskPlayAnim(cache.ped, "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, 0, 0, 0)
+                                    Wait(650)
+                                    ClearPedTasks(cache.ped)
+                                    SetPedKeepTask(ped, false)
+                                    SetEntityAsNoLongerNeeded(ped)
+                                    ClearPedTasksImmediately(ped)
+                                    lastPed[#lastPed + 1] = ped
+                                    exports.ox_target:removeEntity(targetPedSale, optionNamesTargetPed)
+                                    PoliceCall()
+                                end,
                             },
-                            distance = 1.5,
-                        })
+                            {
+                                name = 'ox:option2',
+                                icon = 'fas fa-x',
+                                label = 'Decline offer',
+                                onSelect = function()
+                                    QBCore.Functions.Notify(Lang:t("error.offer_declined"), 'error')
+                                    hasTarget = false
+                                    SetPedKeepTask(ped, false)
+                                    SetEntityAsNoLongerNeeded(ped)
+                                    ClearPedTasksImmediately(ped)
+                                    lastPed[#lastPed + 1] = ped
+                                    exports.ox_target:removeEntity(targetPedSale, optionNamesTargetPed)
+                                end,
+                            },
+                        }
+                        exports.ox_target:addEntity(targetPedSale, options)
                     elseif not Config.UseTarget then
                         if not textDrawn then
                             textDrawn = true
@@ -254,9 +250,9 @@ local function SellToPed(ped)
                             TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
                             hasTarget = false
                             LoadAnimDict("gestures@f@standing@casual")
-                            TaskPlayAnim(PlayerPedId(), "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, 0, 0, 0)
+                            TaskPlayAnim(cache.ped, "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, 0, 0, 0)
                             Wait(650)
-                            ClearPedTasks(PlayerPedId())
+                            ClearPedTasks(cache.ped)
                             SetPedKeepTask(ped, false)
                             SetEntityAsNoLongerNeeded(ped)
                             ClearPedTasksImmediately(ped)
@@ -278,7 +274,7 @@ local function SellToPed(ped)
                 else
                     if Config.UseTarget then
                         zoneMade = false
-                        exports['qb-target']:RemoveZone('sellingPed')
+                        exports.ox_target:removeEntity(targetPedSale, optionNamesTargetPed)
                     else
                         if textDrawn then
                             exports['qbx-core']:HideText()
@@ -304,10 +300,10 @@ local function ToggleSelling()
         cornerselling = true
         LocalPlayer.state:set("inv_busy", true, true)
         QBCore.Functions.Notify(Lang:t("info.started_selling_drugs"))
-        local startLocation = GetEntityCoords(PlayerPedId())
+        local startLocation = GetEntityCoords(cache.ped)
         CreateThread(function()
             while cornerselling do
-                local player = PlayerPedId()
+                local player = cache.ped
                 local coords = GetEntityCoords(player)
                 if not hasTarget then
                     local PlayerPeds = {}
