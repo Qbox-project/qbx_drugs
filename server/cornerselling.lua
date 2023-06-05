@@ -11,15 +11,15 @@ local function getAvailableDrugs(source)
             AvailableDrugs[#AvailableDrugs + 1] = {
                 item = item.name,
                 amount = item.amount,
-                label = QBCore.Shared.Items[item.name]["label"]
+                label = QBCore.Shared.Items[item.name].label
             }
         end
     end
     return table.type(AvailableDrugs) ~= "empty" and AvailableDrugs or nil
 end
 
-QBCore.Functions.CreateCallback('qb-drugs:server:cornerselling:getAvailableDrugs', function(source, cb)
-    cb(getAvailableDrugs(source))
+lib.callback.register('qb-drugs:server:getAvailableDrugs', function(source)
+    return getAvailableDrugs(source)
 end)
 
 RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
