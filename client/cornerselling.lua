@@ -19,7 +19,7 @@ end
 
 local function TooFarAway()
     QBCore.Functions.Notify(Lang:t("error.too_far_away"), 'error')
-    LocalPlayer.state:set("inv_busy", false, true)
+    LocalPlayer.state:set("invBusy", false, true)
     cornerselling = false
     hasTarget = false
     availableDrugs = {}
@@ -152,21 +152,12 @@ local function SellToPed(ped)
     local coords = GetEntityCoords(cache.ped, true)
     local pedCoords = GetEntityCoords(ped)
     local pedDist = #(coords - pedCoords)
-    if getRobbed <= Config.RobberyChance then
-        TaskGoStraightToCoord(ped, coords, 15.0, -1, 0.0, 0.0)
-    else
-        TaskGoStraightToCoord(ped, coords, 1.2, -1, 0.0, 0.0)
-    end
+    TaskGoStraightToCoord(ped, coords.x, coords.y, coords.z, getRobbed <= Config.RobberyChance and 15.0 or 1.2, -1, 0.0, 0.0)
 
     while pedDist > 1.5 do
         coords = GetEntityCoords(cache.ped, true)
         pedCoords = GetEntityCoords(ped)
-        if getRobbed <= Config.RobberyChance then
-            TaskGoStraightToCoord(ped, coords, 15.0, -1, 0.0, 0.0)
-        else
-            TaskGoStraightToCoord(ped, coords, 1.2, -1, 0.0, 0.0)
-        end
-        TaskGoStraightToCoord(ped, coords, 1.2, -1, 0.0, 0.0)
+        TaskGoStraightToCoord(ped, coords.x, coords.y, coords.z, getRobbed <= Config.RobberyChance and 15.0 or 1.2, -1, 0.0, 0.0)
         pedDist = #(coords - pedCoords)
         Wait(100)
     end
@@ -176,7 +167,7 @@ local function SellToPed(ped)
     TaskStartScenarioInPlace(ped, "WORLD_HUMAN_STAND_IMPATIENT_UPRIGHT", 0, false)
 
     if hasTarget then
-        while pedDist < 1.5 and not IsPedDeadOrDying(ped) do
+        while pedDist < 1.5 and not IsPedDeadOrDying(ped, false) do
             local coords2 = GetEntityCoords(cache.ped, true)
             local pedCoords2 = GetEntityCoords(ped)
             local pedDist2 = #(coords2 - pedCoords2)
@@ -190,10 +181,10 @@ local function SellToPed(ped)
                     amount = bagAmount,
                 }
                 hasTarget = false
-                local moveto = GetEntityCoords(cache.ped)
-                local movetoCoords = {x = moveto.x + math.random(100, 500), y = moveto.y + math.random(100, 500), z = moveto.z, }
+                local moveTo = GetEntityCoords(cache.ped)
+                local moveToCoords = vec3(moveTo.x + math.random(100, 500), moveTo.y + math.random(100, 500), moveTo.z)
                 ClearPedTasksImmediately(ped)
-                TaskGoStraightToCoord(ped, movetoCoords.x, movetoCoords.y, movetoCoords.z, 15.0, -1, 0.0, 0.0)
+                TaskGoStraightToCoord(ped, moveToCoords.x, moveToCoords.y, moveToCoords.z, 15.0, -1, 0.0, 0.0)
                 lastPed[#lastPed + 1] = ped
                 RobberyPed()
                 break
@@ -212,7 +203,7 @@ local function SellToPed(ped)
                                     TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
                                     hasTarget = false
                                     LoadAnimDict("gestures@f@standing@casual")
-                                    TaskPlayAnim(cache.ped, "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, 0, 0, 0)
+                                    TaskPlayAnim(cache.ped, "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, false, false, false)
                                     Wait(650)
                                     ClearPedTasks(cache.ped)
                                     SetPedKeepTask(ped, false)
@@ -250,7 +241,7 @@ local function SellToPed(ped)
                             TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
                             hasTarget = false
                             LoadAnimDict("gestures@f@standing@casual")
-                            TaskPlayAnim(cache.ped, "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, 0, 0, 0)
+                            TaskPlayAnim(cache.ped, "gestures@f@standing@casual", "gesture_point", 3.0, 3.0, -1, 49, 0, false, false, false)
                             Wait(650)
                             ClearPedTasks(cache.ped)
                             SetPedKeepTask(ped, false)
@@ -298,7 +289,7 @@ end
 local function ToggleSelling()
     if not cornerselling then
         cornerselling = true
-        LocalPlayer.state:set("inv_busy", true, true)
+        LocalPlayer.state:set("invBusy", true, true)
         QBCore.Functions.Notify(Lang:t("info.started_selling_drugs"))
         local startLocation = GetEntityCoords(cache.ped)
         CreateThread(function()
@@ -314,7 +305,7 @@ local function ToggleSelling()
                         end
                     end
                     local closestPed, closestDistance = QBCore.Functions.GetClosestPed(coords, PlayerPeds)
-                    if closestDistance < 15.0 and closestPed ~= 0 and not IsPedInAnyVehicle(closestPed) and GetPedType(closestPed) ~= 28 then
+                    if closestDistance < 15.0 and closestPed ~= 0 and not IsPedInAnyVehicle(closestPed, false) and GetPedType(closestPed) ~= 28 then
                         SellToPed(closestPed)
                     end
                 end
@@ -329,26 +320,25 @@ local function ToggleSelling()
         stealingPed = nil
         stealData = {}
         cornerselling = false
-        LocalPlayer.state:set("inv_busy", false, true)
+        LocalPlayer.state:set("invBusy", false, true)
         QBCore.Functions.Notify(Lang:t("info.stopped_selling_drugs"))
     end
 end
 
 -- Events
 RegisterNetEvent('qb-drugs:client:cornerselling', function()
-    QBCore.Functions.TriggerCallback('qb-drugs:server:cornerselling:getAvailableDrugs', function(result)
-        if CurrentCops >= Config.MinimumDrugSalePolice then
-            if result then
-                availableDrugs = result
-                ToggleSelling()
-            else
-                QBCore.Functions.Notify(Lang:t("error.has_no_drugs"), 'error')
-                LocalPlayer.state:set("inv_busy", false, true)
-            end
+    if CurrentCops >= Config.MinimumDrugSalePolice then
+        local result = lib.callback.await('qb-drugs:server:getAvailableDrugs', false)
+        if result then
+            availableDrugs = result
+            ToggleSelling()
         else
-            QBCore.Functions.Notify(Lang:t("error.not_enough_police", {polices = Config.MinimumDrugSalePolice}), "error")
+            QBCore.Functions.Notify(Lang:t("error.has_no_drugs"), 'error')
+            LocalPlayer.state:set("invBusy", false, true)
         end
-    end)
+    else
+        QBCore.Functions.Notify(Lang:t("error.not_enough_police", {polices = Config.MinimumDrugSalePolice}), "error")
+    end
 end)
 
 RegisterNetEvent('police:SetCopCount', function(amount)
@@ -360,6 +350,6 @@ RegisterNetEvent('qb-drugs:client:refreshAvailableDrugs', function(items)
     if #availableDrugs <= 0 then
         QBCore.Functions.Notify(Lang:t("error.no_drugs_left"), 'error')
         cornerselling = false
-        LocalPlayer.state:set("inv_busy", false, true)
+        LocalPlayer.state:set("invBusy", false, true)
     end
 end)
