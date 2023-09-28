@@ -13,6 +13,9 @@ shared_scripts {
     '@ox_lib/init.lua'
 }
 
+modules {
+	'qbx_core:playerdata',
+}
 client_scripts{
     'client/deliveries.lua',
     'client/cornerselling.lua'
