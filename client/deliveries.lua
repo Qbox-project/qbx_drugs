@@ -52,7 +52,7 @@ local function KnockDoorAnim(home)
     local knockAnimLib = "timetable@jimmy@doorknock@"
     local knockAnim = "knockdoor_idle"
     local PlayerPed = PlayerPedId()
-    local myData = QBX.PlayerData
+    
     if home then
         TriggerServerEvent("InteractSound_SV:PlayOnSource", "knock_door", 0.2)
         Wait(100)
@@ -70,7 +70,7 @@ local function KnockDoorAnim(home)
             multiline = true,
             args = {
                 Lang:t("info.dealer_name", {dealerName = Config.Dealers[currentDealer].name}),
-                Lang:t("info.fred_knock_message", {firstName = myData.charinfo.firstname})
+                Lang:t("info.fred_knock_message", {firstName = QBX.PlayerData.charinfo.firstname})
             }
         })
         exports['qbx-core']:DrawText(Lang:t("info.other_dealers_button"), 'left')
