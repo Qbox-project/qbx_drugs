@@ -1,4 +1,4 @@
-QBCore = exports['qbx-core']:GetCoreObject()
+
 local currentDealer = nil
 local dealerIsHome = false
 local waitingDelivery = nil
@@ -41,7 +41,7 @@ local function OpenDealerShop()
     repItems.items = {}
     repItems.slots = 30
     for k, _ in pairs(Config.Dealers[currentDealer].products) do
-        if QBCore.Functions.GetPlayerData().metadata.dealerrep >= Config.Dealers[currentDealer].products[k].minrep then
+        if exports.qbx_core:GetPlayerData().metadata.dealerrep >= Config.Dealers[currentDealer].products[k].minrep then
             repItems.items[k] = Config.Dealers[currentDealer].products[k]
         end
     end
@@ -52,7 +52,7 @@ local function KnockDoorAnim(home)
     local knockAnimLib = "timetable@jimmy@doorknock@"
     local knockAnim = "knockdoor_idle"
     local PlayerPed = PlayerPedId()
-    local myData = QBCore.Functions.GetPlayerData()
+    local myData = exports.qbx_core:GetPlayerData()
     if home then
         TriggerServerEvent("InteractSound_SV:PlayOnSource", "knock_door", 0.2)
         Wait(100)
@@ -113,7 +113,7 @@ local function KnockDealerDoor()
 end
 
 local function RandomDeliveryItemOnRep()
-    local myRep = QBCore.Functions.GetPlayerData().metadata.dealerrep
+    local myRep = exports.qbx_core:GetPlayerData().metadata.dealerrep
     local availableItems = {}
     for k in pairs(Config.DeliveryItems) do
         if Config.DeliveryItems[k].minrep <= myRep then
