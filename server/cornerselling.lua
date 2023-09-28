@@ -1,6 +1,6 @@
 local function getAvailableDrugs(source)
     local AvailableDrugs = {}
-    local Player = QBCore.Functions.GetPlayer(source)
+    local Player = exports.qbx_core:GetPlayer(source)
 
     if not Player then return nil end
 
@@ -24,7 +24,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
     local availableDrugs = getAvailableDrugs(source)
-    local Player = QBCore.Functions.GetPlayer(source)
+    local Player = exports.qbx_core:GetPlayer(source)
 
     if not availableDrugs or not Player then return end
 
@@ -33,7 +33,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, price)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = exports.qbx_core:GetPlayer(src)
     local availableDrugs = getAvailableDrugs(src)
 
     if not availableDrugs or not Player then return end
@@ -54,7 +54,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:robCornerDrugs', function(drugType, amount)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = exports.qbx_core:GetPlayer(src)
     local availableDrugs = getAvailableDrugs(src)
 
     if not availableDrugs or not Player then return end
