@@ -1,4 +1,4 @@
-QBCore = exports['qbx-core']:GetCoreObject()
+
 
 -- Functions
 exports('GetDealers', function()
@@ -13,7 +13,7 @@ end)
 -- Events
 RegisterNetEvent('qb-drugs:server:updateDealerItems', function(itemData, amount, dealer)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = exports.qbx_core:GetPlayer(src)
 
     if not Player then return end
 
@@ -29,7 +29,7 @@ end)
 
 RegisterNetEvent('qb-drugs:server:giveDeliveryItems', function(deliveryData)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = exports.qbx_core:GetPlayer(src)
 
     if not Player then return end
 
@@ -43,14 +43,14 @@ end)
 
 RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTime)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = exports.qbx_core:GetPlayer(src)
 
     if not Player then return end
 
     local item = Config.DeliveryItems[deliveryData.item].item
     local itemAmount = deliveryData.amount
     local payout = deliveryData.itemData.payout * itemAmount
-    local copsOnline = QBCore.Functions.GetDutyCountType('leo')
+    local copsOnline = exports.qbx_core:GetDutyCountType('leo')
     local curRep = Player.PlayerData.metadata.dealerrep
     local invItem = Player.Functions.GetItemByName(item)
     if inTime then
@@ -131,24 +131,38 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
     end
 end)
 
--- Commands
-QBCore.Commands.Add("newdealer", Lang:t("info.newdealer_command_desc"), {{
-    name = Lang:t("info.newdealer_command_help1_name"),
-    help = Lang:t("info.newdealer_command_help1_help")
-}, {
-    name = Lang:t("info.newdealer_command_help2_name"),
-    help = Lang:t("info.newdealer_command_help2_help")
-}, {
-    name = Lang:t("info.newdealer_command_help3_name"),
-    help = Lang:t("info.newdealer_command_help3_help")
-}}, true, function(source, args)
+
+lib.addCommand("newdealer", {
+    help = Lang:t("info.newdealer_command_desc"),
+    params = {
+        {
+            name = 'name',
+            type = 'string',
+            help = Lang:t("info.newdealer_command_help1_help"),
+            optional = false
+        },
+        {
+            name = 'min',
+            type = 'number',
+            help = Lang:t("info.newdealer_command_help2_help"),
+            optional = false
+        },
+        {
+            name = 'max',
+            type = 'number',
+            help = Lang:t("info.newdealer_command_help3_help"),
+            optional = false
+        }
+    },
+    restricted = 'group.admin'
+}, function(source, args, raw)
     local ped = GetPlayerPed(source)
     local coords = GetEntityCoords(ped)
-    local Player = QBCore.Functions.GetPlayer(source)
+    local Player = exports.qbx_core:GetPlayer(source)
     if not Player then return end
-    local dealerName = args[1]
-    local minTime = tonumber(args[2])
-    local maxTime = tonumber(args[3])
+    local dealerName = args.name
+    local minTime = args.min
+    local maxTime = args.max
     local time = json.encode({min = minTime, max = maxTime})
     local pos = json.encode({x = coords.x, y = coords.y, z = coords.z})
     local result = MySQL.scalar.await('SELECT name FROM dealers WHERE name = ?', {dealerName})
@@ -165,13 +179,21 @@ QBCore.Commands.Add("newdealer", Lang:t("info.newdealer_command_desc"), {{
         }
         TriggerClientEvent('qb-drugs:client:RefreshDealers', -1, Config.Dealers)
     end)
-end, "admin")
+end)
 
-QBCore.Commands.Add("deletedealer", Lang:t("info.deletedealer_command_desc"), {{
-    name = Lang:t("info.deletedealer_command_help1_name"),
-    help = Lang:t("info.deletedealer_command_help1_help")
-}}, true, function(source, args)
-    local dealerName = args[1]
+lib.addCommand("deletedealer", {
+    help = Lang:t("info.newdealer_command_desc"),
+    params = {
+        {
+            name = 'name',
+            type = 'string',
+            help = Lang:t("info.deletedealer_command_help1_help"),
+            optional = false
+        },
+    },
+    restricted = 'group.admin'
+}, function(source, args, raw)
+    local dealerName = args.name
     local result = MySQL.scalar.await('SELECT * FROM dealers WHERE name = ?', {dealerName})
     if result then
         MySQL.query('DELETE FROM dealers WHERE name = ?', {dealerName})
@@ -181,9 +203,13 @@ QBCore.Commands.Add("deletedealer", Lang:t("info.deletedealer_command_desc"), {{
     else
         TriggerClientEvent('QBCore:Notify', source, Lang:t("error.dealer_not_exists_command", {dealerName = dealerName}), "error")
     end
-end, "admin")
+end)
 
-QBCore.Commands.Add("dealers", Lang:t("info.dealers_command_desc"), {}, false, function(source, _)
+lib.addCommand("dealers", {
+    help = "To see the list of dealers",
+
+    restricted = 'group.admin'
+}, function(source, args, raw)
     local DealersText = ""
     if Config.Dealers ~= nil and next(Config.Dealers) ~= nil then
         for _, v in pairs(Config.Dealers) do
@@ -196,13 +222,21 @@ QBCore.Commands.Add("dealers", Lang:t("info.dealers_command_desc"), {}, false, f
     else
         TriggerClientEvent('QBCore:Notify', source, Lang:t("error.no_dealers"), 'error')
     end
-end, "admin")
+end)
 
-QBCore.Commands.Add("dealergoto", Lang:t("info.dealergoto_command_desc"), {{
-    name = Lang:t("info.dealergoto_command_help1_name"),
-    help = Lang:t("info.dealergoto_command_help1_help")
-}}, true, function(source, args)
-    local DealerName = tostring(args[1])
+lib.addCommand("dealergoto", {
+    help = "To teleport to dealer",
+    params = {
+        {
+            name = 'name',
+            type = 'string',
+            help = Lang:t("info.dealergoto_command_help1_help"),
+            optional = false
+        },
+    },
+    restricted = 'group.admin'
+}, function(source, args, raw)
+    local DealerName = args.name
     if Config.Dealers[DealerName] then
         local ped = GetPlayerPed(source)
         SetEntityCoords(ped, Config.Dealers[DealerName].coords.x, Config.Dealers[DealerName].coords.y, Config.Dealers[DealerName].coords.z, false, false, false, false)
@@ -210,7 +244,8 @@ QBCore.Commands.Add("dealergoto", Lang:t("info.dealergoto_command_desc"), {{
     else
         TriggerClientEvent('QBCore:Notify', source, Lang:t("error.dealer_not_exists"), 'error')
     end
-end, "admin")
+end)
+
 
 CreateThread(function()
     Wait(500)
