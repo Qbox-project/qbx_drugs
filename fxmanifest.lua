@@ -6,7 +6,7 @@ repository 'https://github.com/Qbox-project/qbx_drugs'
 version '1.0.0'
 
 shared_scripts {
-    '@ox_lib/init.lua'
+    '@ox_lib/init.lua',
     '@qbx_core/shared/locale.lua',
     'locales/en.lua',
     'locales/*.lua',
@@ -16,13 +16,13 @@ shared_scripts {
 client_scripts{
     '@qbx_core/modules/playerdata.lua',
     'client/deliveries.lua',
-    'client/cornerselling.lua'
+    'client/cornerselling.lua',
 }
 
 server_scripts{
     '@oxmysql/lib/MySQL.lua',
     'server/deliveries.lua',
-    'server/cornerselling.lua'
+    'server/cornerselling.lua',
 }
 
 lua54 'yes'
