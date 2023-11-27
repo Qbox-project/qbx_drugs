@@ -1,11 +1,13 @@
+local config = require 'config.server'
+
 local function getAvailableDrugs(source)
     local AvailableDrugs = {}
     local Player = exports.qbx_core:GetPlayer(source)
 
     if not Player then return nil end
 
-    for i = 1, #Config.CornerSellingDrugsList do
-        local item = Player.Functions.GetItemByName(Config.CornerSellingDrugsList[i])
+    for i = 1, #config.cornerSellingDrugsList do
+        local item = Player.Functions.GetItemByName(config.cornerSellingDrugsList[i])
 
         if item then
             AvailableDrugs[#AvailableDrugs + 1] = {

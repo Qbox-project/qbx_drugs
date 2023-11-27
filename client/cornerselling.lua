@@ -1,3 +1,4 @@
+local config = require 'config.client'
 local cornerselling = false
 local hasTarget = false
 local lastPed = {}
@@ -26,13 +27,13 @@ local function TooFarAway()
 end
 
 local function PoliceCall()
-    if Config.PoliceCallChance <= math.random(1, 100) then
+    if config.policeCallChance <= math.random(1, 100) then
         TriggerServerEvent('police:server:policeAlert', 'Drug sale in progress')
     end
 end
 
 local function RobberyPed()
-    if Config.UseTarget then
+    if config.useTarget then
         targetStealingPed = NetworkGetNetworkIdFromEntity(stealingPed)
         local options = {
             {
@@ -84,7 +85,7 @@ local function RobberyPed()
                     local playerPed = cache.ped
                     local pos = GetEntityCoords(playerPed)
                     local pedpos = GetEntityCoords(stealingPed)
-                    if not Config.UseTarget and #(pos - pedpos) < 1.5 then
+                    if not config.useTarget and #(pos - pedpos) < 1.5 then
                         if not textDrawn then
                             textDrawn = true
                             exports['qbx-core']:DrawText(Lang:t("info.pick_up_button"))
@@ -134,7 +135,7 @@ local function SellToPed(ped)
     local successChance = math.random(1, 100)
     local scamChance = math.random(1, 100)
     local getRobbed = math.random(1, 100)
-    if successChance <= Config.SuccessChance then hasTarget = false return end
+    if successChance <= config.successChance then hasTarget = false return end
 
     local drugType = math.random(1, #availableDrugs)
     local bagAmount = math.random(1, availableDrugs[drugType].amount)
@@ -142,9 +143,9 @@ local function SellToPed(ped)
 
     currentOfferDrug = availableDrugs[drugType]
 
-    local ddata = Config.DrugsPrice[currentOfferDrug.item]
+    local ddata = config.drugsPrice[currentOfferDrug.item]
     local randomPrice = math.random(ddata.min, ddata.max) * bagAmount
-    if scamChance <= Config.ScamChance then randomPrice = math.random(3, 10) * bagAmount end
+    if scamChance <= config.scamChance then randomPrice = math.random(3, 10) * bagAmount end
 
     SetEntityAsNoLongerNeeded(ped)
     ClearPedTasks(ped)
@@ -152,12 +153,12 @@ local function SellToPed(ped)
     local coords = GetEntityCoords(cache.ped, true)
     local pedCoords = GetEntityCoords(ped)
     local pedDist = #(coords - pedCoords)
-    TaskGoStraightToCoord(ped, coords.x, coords.y, coords.z, getRobbed <= Config.RobberyChance and 15.0 or 1.2, -1, 0.0, 0.0)
+    TaskGoStraightToCoord(ped, coords.x, coords.y, coords.z, getRobbed <= config.robberyChance and 15.0 or 1.2, -1, 0.0, 0.0)
 
     while pedDist > 1.5 do
         coords = GetEntityCoords(cache.ped, true)
         pedCoords = GetEntityCoords(ped)
-        TaskGoStraightToCoord(ped, coords.x, coords.y, coords.z, getRobbed <= Config.RobberyChance and 15.0 or 1.2, -1, 0.0, 0.0)
+        TaskGoStraightToCoord(ped, coords.x, coords.y, coords.z, getRobbed <= config.robberyChance and 15.0 or 1.2, -1, 0.0, 0.0)
         pedDist = #(coords - pedCoords)
         Wait(100)
     end
@@ -171,7 +172,7 @@ local function SellToPed(ped)
             local coords2 = GetEntityCoords(cache.ped, true)
             local pedCoords2 = GetEntityCoords(ped)
             local pedDist2 = #(coords2 - pedCoords2)
-            if getRobbed <= Config.RobberyChance then
+            if getRobbed <= config.robberyChance then
                 TriggerServerEvent('qb-drugs:server:robCornerDrugs', drugType, bagAmount)
                 QBCore.Functions.Notify(Lang:t("info.has_been_robbed", {bags = bagAmount, drugType = availableDrugs[drugType].label}))
                 stealingPed = ped
@@ -190,7 +191,7 @@ local function SellToPed(ped)
                 break
             else
                 if pedDist2 < 1.5 and cornerselling then
-                    if Config.UseTarget and not zoneMade then
+                    if config.useTarget and not zoneMade then
                         zoneMade = true
                         targetPedSale = NetworkGetNetworkIdFromEntity(ped)
                         optionNamesTargetPed = {'selldrugs', 'declineoffer'}
@@ -230,7 +231,7 @@ local function SellToPed(ped)
                             },
                         }
                         exports.ox_target:addEntity(targetPedSale, options)
-                    elseif not Config.UseTarget then
+                    elseif not config.useTarget then
                         if not textDrawn then
                             textDrawn = true
                             exports['qbx-core']:DrawText(Lang:t("info.drug_offer", {bags = bagAmount, drugLabel = currentOfferDrug.label, randomPrice = randomPrice}))
@@ -263,7 +264,7 @@ local function SellToPed(ped)
                         end
                     end
                 else
-                    if Config.UseTarget then
+                    if config.useTarget then
                         zoneMade = false
                         exports.ox_target:removeEntity(targetPedSale, optionNamesTargetPed)
                     else
@@ -327,7 +328,7 @@ end
 
 -- Events
 RegisterNetEvent('qb-drugs:client:cornerselling', function()
-    if CurrentCops >= Config.MinimumDrugSalePolice then
+    if CurrentCops >= config.minimumDrugSalePolice then
         local result = lib.callback.await('qb-drugs:server:getAvailableDrugs', false)
         if result then
             availableDrugs = result
@@ -337,7 +338,7 @@ RegisterNetEvent('qb-drugs:client:cornerselling', function()
             LocalPlayer.state:set("invBusy", false, true)
         end
     else
-        QBCore.Functions.Notify(Lang:t("error.not_enough_police", {polices = Config.MinimumDrugSalePolice}), "error")
+        QBCore.Functions.Notify(Lang:t("error.not_enough_police", {polices = config.minimumDrugSalePolice}), "error")
     end
 end)
 

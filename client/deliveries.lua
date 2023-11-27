@@ -1,4 +1,5 @@
-
+local config = require 'config.client'
+local sharedConfig = require 'config.shared'
 local currentDealer = nil
 local dealerIsHome = false
 local waitingDelivery = nil
@@ -13,10 +14,10 @@ local drugDeliveryZone
 ---@diagnostic disable-next-line: param-type-mismatch
 AddStateBagChangeHandler('isLoggedIn', nil, function(_, _, value)
     if value then
-        Config.Dealers = lib.callback.await('qb-drugs:server:RequestConfig', false)
+        sharedConfig.dealers = lib.callback.await('qb-drugs:server:RequestConfig', false)
         InitZones()
     else
-        if not Config.UseTarget and dealerCombo then dealerCombo:destroy() end
+        if not config.useTarget and dealerCombo then dealerCombo:destroy() end
     end
 end)
 
@@ -25,7 +26,7 @@ end)
 local function GetClosestDealer()
     local ped = PlayerPedId()
     local pCoords = GetEntityCoords(ped)
-    for k,v in pairs(Config.Dealers) do
+    for k,v in pairs(sharedConfig.dealers) do
         local dealerCoords = vector3(v.coords.x, v.coords.y, v.coords.z)
         if #(pCoords - dealerCoords) < 2 then
             currentDealer = k
@@ -37,22 +38,22 @@ end
 local function OpenDealerShop()
     GetClosestDealer()
     local repItems = {}
-    repItems.label = Config.Dealers[currentDealer].name
+    repItems.label = sharedConfig.dealers[currentDealer].name
     repItems.items = {}
     repItems.slots = 30
-    for k, _ in pairs(Config.Dealers[currentDealer].products) do
-        if QBX.PlayerData.metadata.dealerrep >= Config.Dealers[currentDealer].products[k].minrep then
-            repItems.items[k] = Config.Dealers[currentDealer].products[k]
+    for k, _ in pairs(sharedConfig.dealers[currentDealer].products) do
+        if QBX.PlayerData.metadata.dealerrep >= sharedConfig.dealers[currentDealer].products[k].minrep then
+            repItems.items[k] = sharedConfig.dealers[currentDealer].products[k]
         end
     end
-    TriggerServerEvent("inventory:server:OpenInventory", "shop", "Dealer_"..Config.Dealers[currentDealer].name, repItems)
+    TriggerServerEvent("inventory:server:OpenInventory", "shop", "Dealer_"..sharedConfig.dealers[currentDealer].name, repItems)
 end
 
 local function KnockDoorAnim(home)
     local knockAnimLib = "timetable@jimmy@doorknock@"
     local knockAnim = "knockdoor_idle"
     local PlayerPed = PlayerPedId()
-    
+
     if home then
         TriggerServerEvent("InteractSound_SV:PlayOnSource", "knock_door", 0.2)
         Wait(100)
@@ -69,7 +70,7 @@ local function KnockDoorAnim(home)
             color = { 255, 0, 0},
             multiline = true,
             args = {
-                Lang:t("info.dealer_name", {dealerName = Config.Dealers[currentDealer].name}),
+                Lang:t("info.dealer_name", {dealerName = sharedConfig.dealers[currentDealer].name}),
                 Lang:t("info.fred_knock_message", {firstName = QBX.PlayerData.charinfo.firstname})
             }
         })
@@ -93,8 +94,8 @@ end
 local function KnockDealerDoor()
     GetClosestDealer()
     local hours = GetClockHours()
-    local min = Config.Dealers[currentDealer].time.min
-    local max = Config.Dealers[currentDealer].time.max
+    local min = sharedConfig.dealers[currentDealer].time.min
+    local max = sharedConfig.dealers[currentDealer].time.max
     if max < min then
         if hours <= max then
             KnockDoorAnim(true)
@@ -115,8 +116,8 @@ end
 local function RandomDeliveryItemOnRep()
     local myRep = QBX.PlayerData.metadata.dealerrep
     local availableItems = {}
-    for k in pairs(Config.DeliveryItems) do
-        if Config.DeliveryItems[k].minrep <= myRep then
+    for k in pairs(sharedConfig.deliveryItems) do
+        if sharedConfig.deliveryItems[k].minrep <= myRep then
             availableItems[#availableItems+1] = k
         end
     end
@@ -126,22 +127,22 @@ end
 local function RequestDelivery()
     if not waitingDelivery then
         GetClosestDealer()
-        local location = math.random(1, #Config.DeliveryLocations)
+        local location = math.random(1, #config.deliveryLocations)
         local amount = math.random(1, 3)
         local item = RandomDeliveryItemOnRep()
         waitingDelivery = {
-            coords = Config.DeliveryLocations[location].coords,
-            locationLabel = Config.DeliveryLocations[location].label,
+            coords = config.deliveryLocations[location].coords,
+            locationLabel = config.deliveryLocations[location].label,
             amount = amount,
             dealer = currentDealer,
-            itemData = Config.DeliveryItems[item],
+            itemData = sharedConfig.deliveryItems[item],
             item = item
         }
         QBCore.Functions.Notify(Lang:t("info.sending_delivery_email"), 'success')
         TriggerServerEvent('qb-drugs:server:giveDeliveryItems', waitingDelivery)
         SetTimeout(2000, function()
             TriggerServerEvent('qb-phone:server:sendNewMail', {
-                sender = Config.Dealers[currentDealer].name,
+                sender = sharedConfig.dealers[currentDealer].name,
                 subject = "Delivery Location",
                 message = Lang:t("info.delivery_info_email", {itemAmount = amount, itemLabel = QBCore.Shared.Items[waitingDelivery.itemData.item].label}),
                 button = {
@@ -167,7 +168,7 @@ local function DeliveryTimer()
 end
 
 local function PoliceCall()
-    if Config.PoliceCallChance <= math.random(1, 100) then
+    if config.policeCallChance <= math.random(1, 100) then
         TriggerServerEvent('police:server:policeAlert', 'Suspicous activity')
     end
 end
@@ -185,7 +186,7 @@ local function DeliverStuff()
         }, {}, {}, {}, function() -- Done
             TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, true)
             activeDelivery = nil
-            if Config.UseTarget then
+            if config.useTarget then
                 exports['qb-target']:RemoveZone('drugDeliveryZone')
             else
                 drugDeliveryZone:destroy()
@@ -238,8 +239,8 @@ function AwaitingInput()
 end
 
 function InitZones()
-    if Config.UseTarget then
-        for k,v in pairs(Config.Dealers) do
+    if config.useTarget then
+        for k,v in pairs(sharedConfig.dealers) do
             exports["qb-target"]:AddBoxZone("dealer_"..k, vector3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
                 name = "dealer_"..k,
                 heading = v.heading,
@@ -257,8 +258,8 @@ function InitZones()
                         canInteract = function()
                             GetClosestDealer()
                             local hours = GetClockHours()
-                            local min = Config.Dealers[currentDealer].time.min
-                            local max = Config.Dealers[currentDealer].time.max
+                            local min = sharedConfig.dealers[currentDealer].time.min
+                            local max = sharedConfig.dealers[currentDealer].time.max
                             if max < min then
                                 if hours <= max then
                                     if not waitingDelivery then
@@ -287,8 +288,8 @@ function InitZones()
                         canInteract = function()
                             GetClosestDealer()
                             local hours = GetClockHours()
-                            local min = Config.Dealers[currentDealer].time.min
-                            local max = Config.Dealers[currentDealer].time.max
+                            local min = sharedConfig.dealers[currentDealer].time.min
+                            local max = sharedConfig.dealers[currentDealer].time.max
                             if max < min then
                                 if hours <= max then
                                     return true
@@ -308,7 +309,7 @@ function InitZones()
         end
     else
         local dealerPoly = {}
-        for k, v in pairs(Config.Dealers) do
+        for k, v in pairs(sharedConfig.dealers) do
             dealerPoly[#dealerPoly+1] = BoxZone:Create(vector3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
                 heading = -20,
                 name="dealer_"..k,
@@ -341,8 +342,8 @@ end
 -- Events
 
 RegisterNetEvent('qb-drugs:client:RefreshDealers', function(DealerData)
-    if not Config.UseTarget and dealerCombo then dealerCombo:destroy() end
-    Config.Dealers = DealerData
+    if not config.useTarget and dealerCombo then dealerCombo:destroy() end
+    sharedConfig.dealers = DealerData
     Wait(1000)
     InitZones()
 end)
@@ -352,7 +353,7 @@ RegisterNetEvent('qb-drugs:client:updateDealerItems', function(itemData, amount)
 end)
 
 RegisterNetEvent('qb-drugs:client:setDealerItems', function(itemData, amount, dealer)
-    Config.Dealers[dealer].products[itemData.slot].amount = Config.Dealers[dealer].products[itemData.slot].amount - amount
+    sharedConfig.dealers[dealer].products[itemData.slot].amount = sharedConfig.dealers[dealer].products[itemData.slot].amount - amount
 end)
 
 RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
@@ -365,7 +366,7 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
     deliveryTimeout = 300
     DeliveryTimer()
     SetMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
-    if Config.UseTarget then
+    if config.useTarget then
         exports["qb-target"]:AddBoxZone('drugDeliveryZone', vector3(activeDelivery.coords.x, activeDelivery.coords.y, activeDelivery.coords.z), 1.5, 1.5, {
             name = 'drugDeliveryZone',
             heading = 0,
@@ -424,19 +425,19 @@ end)
 RegisterNetEvent('qb-drugs:client:sendDeliveryMail', function(type, deliveryData)
     if type == 'perfect' then
         TriggerServerEvent('qb-phone:server:sendNewMail', {
-            sender = Config.Dealers[deliveryData.dealer].name,
+            sender = sharedConfig.dealers[deliveryData.dealer].name,
             subject = "Delivery",
-            message = Lang:t("info.perfect_delivery", {dealerName = Config.Dealers[deliveryData.dealer].name})
+            message = Lang:t("info.perfect_delivery", {dealerName = sharedConfig.dealers[deliveryData.dealer].name})
         })
     elseif type == 'bad' then
         TriggerServerEvent('qb-phone:server:sendNewMail', {
-            sender = Config.Dealers[deliveryData.dealer].name,
+            sender = sharedConfig.dealers[deliveryData.dealer].name,
             subject = "Delivery",
             message = Lang:t("info.bad_delivery")
         })
     elseif type == 'late' then
         TriggerServerEvent('qb-phone:server:sendNewMail', {
-            sender = Config.Dealers[deliveryData.dealer].name,
+            sender = sharedConfig.dealers[deliveryData.dealer].name,
             subject = "Delivery",
             message = Lang:t("info.late_delivery")
         })
