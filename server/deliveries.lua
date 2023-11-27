@@ -156,7 +156,7 @@ lib.addCommand("newdealer", {
         }
     },
     restricted = 'group.admin'
-}, function(source, args, raw)
+}, function(source, args)
     local ped = GetPlayerPed(source)
     local coords = GetEntityCoords(ped)
     local Player = exports.qbx_core:GetPlayer(source)
@@ -193,7 +193,7 @@ lib.addCommand("deletedealer", {
         },
     },
     restricted = 'group.admin'
-}, function(source, args, raw)
+}, function(source, args)
     local dealerName = args.name
     local result = MySQL.scalar.await('SELECT * FROM dealers WHERE name = ?', {dealerName})
     if result then
@@ -210,7 +210,7 @@ lib.addCommand("dealers", {
     help = "To see the list of dealers",
 
     restricted = 'group.admin'
-}, function(source, args, raw)
+}, function(source)
     local DealersText = ""
     if sharedConfig.dealers ~= nil and next(sharedConfig.dealers) ~= nil then
         for _, v in pairs(sharedConfig.dealers) do
@@ -236,7 +236,7 @@ lib.addCommand("dealergoto", {
         },
     },
     restricted = 'group.admin'
-}, function(source, args, raw)
+}, function(source, args)
     local DealerName = args.name
     if sharedConfig.dealers[DealerName] then
         local ped = GetPlayerPed(source)
