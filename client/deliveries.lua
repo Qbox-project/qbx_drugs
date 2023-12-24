@@ -24,8 +24,7 @@ end)
 -- Functions
 
 local function GetClosestDealer()
-    local ped = PlayerPedId()
-    local pCoords = GetEntityCoords(ped)
+    local pCoords = cache.coords
     for k,v in pairs(sharedConfig.dealers) do
         local dealerCoords = vector3(v.coords.x, v.coords.y, v.coords.z)
         if #(pCoords - dealerCoords) < 2 then
@@ -35,6 +34,7 @@ local function GetClosestDealer()
     end
 end
 
+---@todo Move to ox_inventory Shop
 local function OpenDealerShop()
     GetClosestDealer()
     local repItems = {}
@@ -52,42 +52,35 @@ end
 local function KnockDoorAnim(home)
     local knockAnimLib = "timetable@jimmy@doorknock@"
     local knockAnim = "knockdoor_idle"
-    local PlayerPed = PlayerPedId()
 
     if home then
         TriggerServerEvent("InteractSound_SV:PlayOnSource", "knock_door", 0.2)
         Wait(100)
-        while (not HasAnimDictLoaded(knockAnimLib)) do
-            RequestAnimDict(knockAnimLib)
-            Wait(100)
-        end
-        TaskPlayAnim(PlayerPed, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
+        lib.requestAnimDict(knockAnimLib)
+        TaskPlayAnim(cache.ped, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
         Wait(3500)
-        TaskPlayAnim(PlayerPed, knockAnimLib, "exit", 3.0, 3.0, -1, 1, 0, false, false, false)
+        TaskPlayAnim(cache.ped, knockAnimLib, "exit", 3.0, 3.0, -1, 1, 0, false, false, false)
         Wait(1000)
         dealerIsHome = true
         TriggerEvent('chat:addMessage', {
-            color = { 255, 0, 0},
+            color = { 255, 0, 0 },
             multiline = true,
             args = {
                 Lang:t("info.dealer_name", {dealerName = sharedConfig.dealers[currentDealer].name}),
                 Lang:t("info.fred_knock_message", {firstName = QBX.PlayerData.charinfo.firstname})
             }
         })
-        exports['qbx-core']:DrawText(Lang:t("info.other_dealers_button"), 'left')
+        lib.showTextUI(Lang:t("info.other_dealers_button"), { position = 'left-center' })
         AwaitingInput()
     else
         TriggerServerEvent("InteractSound_SV:PlayOnSource", "knock_door", 0.2)
         Wait(100)
-        while (not HasAnimDictLoaded(knockAnimLib)) do
-            RequestAnimDict(knockAnimLib)
-            Wait(100)
-        end
-        TaskPlayAnim(PlayerPed, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
+        lib.requestAnimDict(knockAnimLib)
+        TaskPlayAnim(cache.ped, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
         Wait(3500)
-        TaskPlayAnim(PlayerPed, knockAnimLib, "exit", 3.0, 3.0, -1, 1, 0, false, false, false)
+        TaskPlayAnim(cache.ped, knockAnimLib, "exit", 3.0, 3.0, -1, 1, 0, false, false, false)
         Wait(1000)
-        QBCore.Functions.Notify(Lang:t("info.no_one_home"), 'error')
+        exports.qbx_core:Notify(Lang:t("info.no_one_home"), 'error')
     end
 end
 
@@ -130,6 +123,7 @@ local function RequestDelivery()
         local location = math.random(1, #config.deliveryLocations)
         local amount = math.random(1, 3)
         local item = RandomDeliveryItemOnRep()
+
         waitingDelivery = {
             coords = config.deliveryLocations[location].coords,
             locationLabel = config.deliveryLocations[location].label,
@@ -138,13 +132,14 @@ local function RequestDelivery()
             itemData = sharedConfig.deliveryItems[item],
             item = item
         }
-        QBCore.Functions.Notify(Lang:t("info.sending_delivery_email"), 'success')
+
+        exports.qbx_core:Notify(Lang:t("info.sending_delivery_email"), 'success')
         TriggerServerEvent('qb-drugs:server:giveDeliveryItems', waitingDelivery)
         SetTimeout(2000, function()
             TriggerServerEvent('qb-phone:server:sendNewMail', {
                 sender = sharedConfig.dealers[currentDealer].name,
                 subject = "Delivery Location",
-                message = Lang:t("info.delivery_info_email", {itemAmount = amount, itemLabel = QBCore.Shared.Items[waitingDelivery.itemData.item].label}),
+                message = Lang:t("info.delivery_info_email", {itemAmount = amount, itemLabel = exports.ox_inventory:Items()[waitingDelivery.itemData.item].label}),
                 button = {
                     enabled = true,
                     buttonEvent = "qb-drugs:client:setLocation",
@@ -153,7 +148,7 @@ local function RequestDelivery()
             })
         end)
     else
-        QBCore.Functions.Notify(Lang:t("error.pending_delivery"), 'error')
+        exports.qbx_core:Notify(Lang:t("error.pending_delivery"), 'error')
     end
 end
 
@@ -178,22 +173,24 @@ local function DeliverStuff()
         Wait(500)
         TriggerEvent('animations:client:EmoteCommandStart', {"bumbin"})
         PoliceCall()
-        QBCore.Functions.Progressbar("work_dropbox", Lang:t("info.delivering_products"), 3500, false, true, {
-            disableMovement = true,
-            disableCarMovement = true,
-            disableMouse = false,
-            disableCombat = true,
-        }, {}, {}, {}, function() -- Done
+        if lib.progressCircle({
+            label = Lang:t("info.delivering_products"),
+            duration = 3500,
+            position = 'bottom',
+            useWhileDead = false,
+            canCancel = true,
+            disable = { car = true, move = true, combat = true }
+        }) then
             TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, true)
             activeDelivery = nil
             if config.useTarget then
-                exports['qb-target']:RemoveZone('drugDeliveryZone')
+                exports.ox_target:removeZone('drugDeliveryZone')
             else
                 drugDeliveryZone:destroy()
             end
-        end, function() -- Cancel
-            ClearPedTasks(PlayerPedId())
-        end)
+        else
+            ClearPedTasks(cache.ped)
+        end
     else
         TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, false)
     end
@@ -202,7 +199,7 @@ end
 
 local function SetMapBlip(x, y)
     SetNewWaypoint(x, y)
-    QBCore.Functions.Notify(Lang:t("success.route_has_been_set"), 'success');
+    exports.qbx_core:Notify(Lang:t("success.route_has_been_set"), 'success');
 end
 
 -- PolyZone specific functions
@@ -213,22 +210,18 @@ function AwaitingInput()
         while waitingKeyPress do
             if not dealerIsHome then
                 if IsControlPressed(0, 38) then
-                    exports['qbx-core']:KeyPressed()
                     KnockDealerDoor()
                 end
             elseif dealerIsHome then
                 if IsControlJustPressed(0, 38) then
                     OpenDealerShop()
-                    exports['qbx-core']:KeyPressed()
                     waitingKeyPress = false
                 end
                 if IsControlJustPressed(0, 47) then
                     if waitingDelivery then
-                        exports['qbx-core']:KeyPressed()
                         waitingKeyPress = false
                     end
                     RequestDelivery()
-                    exports['qbx-core']:KeyPressed()
                     dealerIsHome = false
                     waitingKeyPress = false
                 end
@@ -240,7 +233,9 @@ end
 
 function InitZones()
     if config.useTarget then
-        for k,v in pairs(sharedConfig.dealers) do
+        for k, v in pairs(sharedConfig.dealers) do
+            ---@todo Move to ox_target
+
             exports["qb-target"]:AddBoxZone("dealer_"..k, vector3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
                 name = "dealer_"..k,
                 heading = v.heading,
@@ -308,6 +303,8 @@ function InitZones()
             })
         end
     else
+        ---@todo Move to ox_lib Zoning
+
         local dealerPoly = {}
         for k, v in pairs(sharedConfig.dealers) do
             dealerPoly[#dealerPoly+1] = BoxZone:Create(vector3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
@@ -325,15 +322,15 @@ function InitZones()
         dealerCombo:onPlayerInOut(function(isPointInside)
             if isPointInside then
                 if not dealerIsHome then
-                    exports['qbx-core']:DrawText(Lang:t("info.knock_button"),'left')
+                    lib.showTextUI(Lang:t("info.knock_button"), { position = 'left-center' })
                     AwaitingInput()
                 elseif dealerIsHome then
-                    exports['qbx-core']:DrawText(Lang:t("info.other_dealers_button"), 'left')
+                    lib.showTextUI(Lang:t("info.other_dealers_button"), { position = 'left-center' })
                     AwaitingInput()
                 end
             else
                 waitingKeyPress = false
-                exports['qbx-core']:HideText()
+                lib.hideTextUI()
             end
         end)
     end
@@ -359,7 +356,7 @@ end)
 RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
     if activeDelivery then
         SetMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
-        QBCore.Functions.Notify(Lang:t("error.pending_delivery"), 'error')
+        exports.qbx_core:Notify(Lang:t("error.pending_delivery"), 'error')
         return
     end
     activeDelivery = locationData
@@ -367,46 +364,41 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
     DeliveryTimer()
     SetMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
     if config.useTarget then
-        exports["qb-target"]:AddBoxZone('drugDeliveryZone', vector3(activeDelivery.coords.x, activeDelivery.coords.y, activeDelivery.coords.z), 1.5, 1.5, {
+        exports.ox_target:addBoxZone({
             name = 'drugDeliveryZone',
-            heading = 0,
-            minZ = activeDelivery.coords.z - 1,
-            maxZ = activeDelivery.coords.z + 1,
-            debugPoly = false
-        }, {
+            coords = vec3(activeDelivery.coords.x, activeDelivery.coords.y, activeDelivery.coords.z),
+            size = vec3(1.5, 1.5, 2.0),
+            rotation = 0.0,
+            debug = true,
             options = {
                 {
                     icon = 'fas fa-user-secret',
                     label = Lang:t("info.target_deliver"),
-                    action = function()
+                    onSelect = function()
                         DeliverStuff()
                         waitingDelivery = nil
                     end,
-                    canInteract = function()
-                        if waitingDelivery then
-                            return true
-                        end
+                    canInteract = function(_, distance)
+                        return waitingDelivery and distance <= 2.5
                     end
                 }
-            },
-            distance = 1.5
+            }
         })
     else
-        drugDeliveryZone = BoxZone:Create(vector3(activeDelivery.coords.x, activeDelivery.coords.y, activeDelivery.coords.z), 1.5, 1.5, {
-            heading = 0,
-            name="drugDelivery",
-            debugPoly = false,
-            minZ = activeDelivery.coords.z - 1,
-            maxZ = activeDelivery.coords.z + 1,
-        })
-        drugDeliveryZone:onPlayerInOut(function(isPointInside)
-            if isPointInside then
-                local inDeliveryZone = true
-                exports['qbx-core']:DrawText(Lang:t("info.deliver_items_button", {itemAmount = activeDelivery.amount, itemLabel = QBCore.Shared.Items[activeDelivery.itemData.item].label}),'left')
+        local inDeliveryZone = false
+        drugDeliveryZone = lib.zones.box({
+            coords = vec3(activeDelivery.coords.xyz),
+            size = vec3(1.5, 1.5, 2.0),
+            rotation = 0.0,
+            debug = false,
+            onEnter = function()
+                inDeliveryZone = true
+                lib.showTextUI(Lang:t("info.deliver_items_button", {itemAmount = activeDelivery.amount, itemLabel = exports.ox_inventory:Items()[activeDelivery.itemData.item].label}), {
+                    position = 'left-center'
+                })
                 CreateThread(function()
                     while inDeliveryZone do
                         if IsControlJustPressed(0, 38) then
-                            exports['qbx-core']:KeyPressed()
                             DeliverStuff()
                             waitingDelivery = nil
                             break
@@ -414,11 +406,12 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
                         Wait(0)
                     end
                 end)
-            else
+            end,
+            onExit = function()
                 inDeliveryZone = false
-                exports['qbx-core']:HideText()
+                lib.hideTextUI()
             end
-        end)
+        })
     end
 end)
 

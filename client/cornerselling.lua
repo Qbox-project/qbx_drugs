@@ -11,16 +11,8 @@ local textDrawn = false
 local zoneMade = false
 
 -- Functions
-local function LoadAnimDict(dict)
-    RequestAnimDict(dict)
-    while not HasAnimDictLoaded(dict) do
-        Wait(0)
-    end
-end
-
 local function TooFarAway()
-    QBCore.Functions.Notify(Lang:t("error.too_far_away"), 'error')
-    LocalPlayer.state:set("invBusy", false, true)
+    exports.qbx_core:Notify(Lang:t("error.too_far_away"), 'error')
     cornerselling = false
     hasTarget = false
     availableDrugs = {}
@@ -42,15 +34,12 @@ local function RobberyPed()
                 label = Lang:t("info.search_ped"),
                 onSelect = function()
                     local player = cache.ped
-                    RequestAnimDict("pickup_object")
-                    while not HasAnimDictLoaded("pickup_object") do
-                        Wait(0)
-                    end
+                    lib.requestAnimDict("pickup_object")
                     TaskPlayAnim(player, "pickup_object", "pickup_low", 8.0, -8.0, -1, 1, 0, false, false, false)
                     Wait(2000)
                     ClearPedTasks(player)
                     TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
-                    TriggerEvent('inventory:client:ItemBox', QBCore.Shared.Items[stealData.item], "add")
+                    TriggerEvent('inventory:client:ItemBox', exports.ox_inventory:Items()[stealData.item], "add")
                     stealingPed = nil
                     stealData = {}
                     exports.ox_target:removeEntity(targetStealingPed, 'stealingped')
@@ -88,20 +77,16 @@ local function RobberyPed()
                     if not config.useTarget and #(pos - pedpos) < 1.5 then
                         if not textDrawn then
                             textDrawn = true
-                            exports['qbx-core']:DrawText(Lang:t("info.pick_up_button"))
+                            lib.showTextUI(Lang:t("info.pick_up_button"))
                         end
                         if IsControlJustReleased(0, 38) then
-                            exports['qbx-core']:KeyPressed()
                             textDrawn = false
-                            RequestAnimDict("pickup_object")
-                            while not HasAnimDictLoaded("pickup_object") do
-                                Wait(0)
-                            end
+                            lib.requestAnimDict("pickup_object")
                             TaskPlayAnim(playerPed, "pickup_object", "pickup_low", 8.0, -8.0, -1, 1, 0, false, false, false)
                             Wait(2000)
                             ClearPedTasks(playerPed)
                             TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
-                            TriggerEvent('inventory:client:ItemBox', QBCore.Shared.Items[stealData.item], "add")
+                            TriggerEvent('inventory:client:ItemBox', exports.ox_inventory:Items()[stealData.item], "add")
                             stealingPed = nil
                             stealData = {}
                         end
@@ -174,7 +159,7 @@ local function SellToPed(ped)
             local pedDist2 = #(coords2 - pedCoords2)
             if getRobbed <= config.robberyChance then
                 TriggerServerEvent('qb-drugs:server:robCornerDrugs', drugType, bagAmount)
-                QBCore.Functions.Notify(Lang:t("info.has_been_robbed", {bags = bagAmount, drugType = availableDrugs[drugType].label}))
+                exports.qbx_core:Notify(Lang:t("info.has_been_robbed", {bags = bagAmount, drugType = availableDrugs[drugType].label}))
                 stealingPed = ped
                 stealData = {
                     item = availableDrugs[drugType].item,
@@ -220,7 +205,7 @@ local function SellToPed(ped)
                                 icon = 'fas fa-x',
                                 label = Lang:t('info.decline_offer'),
                                 onSelect = function()
-                                    QBCore.Functions.Notify(Lang:t("error.offer_declined"), 'error')
+                                    exports.qbx_core:Notify(Lang:t("error.offer_declined"), 'error')
                                     hasTarget = false
                                     SetPedKeepTask(ped, false)
                                     SetEntityAsNoLongerNeeded(ped)
@@ -234,10 +219,9 @@ local function SellToPed(ped)
                     elseif not config.useTarget then
                         if not textDrawn then
                             textDrawn = true
-                            exports['qbx-core']:DrawText(Lang:t("info.drug_offer", {bags = bagAmount, drugLabel = currentOfferDrug.label, randomPrice = randomPrice}))
+                            lib.showTextUI(Lang:t("info.drug_offer", {bags = bagAmount, drugLabel = currentOfferDrug.label, randomPrice = randomPrice}))
                         end
                         if IsControlJustPressed(0, 38) then
-                            exports['qbx-core']:KeyPressed()
                             textDrawn = false
                             TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
                             hasTarget = false
@@ -269,7 +253,7 @@ local function SellToPed(ped)
                         exports.ox_target:removeEntity(targetPedSale, optionNamesTargetPed)
                     else
                         if textDrawn then
-                            exports['qbx-core']:HideText()
+                            lib.hideTextUI()
                             textDrawn = false
                         end
                     end
@@ -290,8 +274,7 @@ end
 local function ToggleSelling()
     if not cornerselling then
         cornerselling = true
-        LocalPlayer.state:set("invBusy", true, true)
-        QBCore.Functions.Notify(Lang:t("info.started_selling_drugs"))
+        exports.qbx_core:Notify(Lang:t("info.started_selling_drugs"))
         local startLocation = GetEntityCoords(cache.ped)
         CreateThread(function()
             while cornerselling do
@@ -305,7 +288,7 @@ local function ToggleSelling()
                             PlayerPeds[#PlayerPeds + 1] = ped
                         end
                     end
-                    local closestPed, closestDistance = exports.qbx_core:GetClosestPed(coords, PlayerPeds)
+                    local closestPed, closestDistance = GetClosestPed(coords, PlayerPeds)
                     if closestDistance < 15.0 and closestPed ~= 0 and not IsPedInAnyVehicle(closestPed, false) and GetPedType(closestPed) ~= 28 then
                         SellToPed(closestPed)
                     end
@@ -321,8 +304,7 @@ local function ToggleSelling()
         stealingPed = nil
         stealData = {}
         cornerselling = false
-        LocalPlayer.state:set("invBusy", false, true)
-        QBCore.Functions.Notify(Lang:t("info.stopped_selling_drugs"))
+        exports.qbx_core:Notify(Lang:t("info.stopped_selling_drugs"))
     end
 end
 
@@ -334,13 +316,17 @@ RegisterNetEvent('qb-drugs:client:cornerselling', function()
             availableDrugs = result
             ToggleSelling()
         else
-            QBCore.Functions.Notify(Lang:t("error.has_no_drugs"), 'error')
-            LocalPlayer.state:set("invBusy", false, true)
+            exports.qbx_core:Notify(Lang:t("error.has_no_drugs"), 'error')
         end
     else
-        QBCore.Functions.Notify(Lang:t("error.not_enough_police", {polices = config.minimumDrugSalePolice}), "error")
+        exports.qbx_core:Notify(Lang:t("error.not_enough_police", {polices = config.minimumDrugSalePolice}), "error")
     end
 end)
+
+-- This is a debug to ensure it works
+-- RegisterCommand('startSelling', function(source, args)
+--     TriggerEvent('qb-drugs:client:cornerselling')
+-- end)
 
 RegisterNetEvent('police:SetCopCount', function(amount)
     CurrentCops = amount
@@ -348,9 +334,8 @@ end)
 
 RegisterNetEvent('qb-drugs:client:refreshAvailableDrugs', function(items)
     availableDrugs = items
-    if #availableDrugs <= 0 then
-        QBCore.Functions.Notify(Lang:t("error.no_drugs_left"), 'error')
+    if availableDrugs == nil or #availableDrugs <= 0 then
+        exports.qbx_core:Notify(Lang:t("error.no_drugs_left"), 'error')
         cornerselling = false
-        LocalPlayer.state:set("invBusy", false, true)
     end
 end)

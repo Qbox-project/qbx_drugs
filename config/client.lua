@@ -45,7 +45,7 @@ return {
     },
     deliveryLocations = {
         {
-            label = "Stripclub",
+            label = "Strip Club",
             coords = vec3(106.24, -1280.32, 29.24),
         },
         {

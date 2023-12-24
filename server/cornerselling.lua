@@ -7,13 +7,14 @@ local function getAvailableDrugs(source)
     if not Player then return nil end
 
     for i = 1, #config.cornerSellingDrugsList do
-        local item = Player.Functions.GetItemByName(config.cornerSellingDrugsList[i])
+        ---@todo Check to see if this works
+        local item = exports.ox_inventory:Search(source, 'count', config.cornerSellingDrugsList[i])
 
         if item then
             AvailableDrugs[#AvailableDrugs + 1] = {
                 item = item.name,
                 amount = item.amount,
-                label = QBCore.Shared.Items[item.name].label
+                label = exports.ox_inventory:Items()[item.name].label
             }
         end
     end
@@ -30,7 +31,7 @@ RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
 
     if not availableDrugs or not Player then return end
 
-    Player.Functions.AddItem(availableDrugs[drugType].item, amount)
+    exports.ox_inventory:AddItem(source, availableDrugs[drugType].item, amount)
 end)
 
 RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, price)
@@ -45,9 +46,8 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
     local hasItem = Player.Functions.GetItemByName(item)
     if hasItem.amount >= amount then
         TriggerClientEvent('QBCore:Notify', src, Lang:t("success.offer_accepted"), 'success')
-        Player.Functions.RemoveItem(item, amount)
+        exports.ox_inventory:RemoveItem(src, item, amount)
         Player.Functions.AddMoney('cash', price, "sold-cornerdrugs")
-        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
         TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
     else
         TriggerClientEvent('qb-drugs:client:cornerselling', src)
@@ -63,7 +63,6 @@ RegisterNetEvent('qb-drugs:server:robCornerDrugs', function(drugType, amount)
 
     local item = availableDrugs[drugType].item
 
-    Player.Functions.RemoveItem(item, amount)
-    TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
+    exports.ox_inventory:RemoveItem(src, item, amount)
     TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
 end)

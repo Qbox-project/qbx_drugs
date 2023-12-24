@@ -22,9 +22,9 @@ RegisterNetEvent('qb-drugs:server:updateDealerItems', function(itemData, amount,
         sharedConfig.dealers[dealer].products[itemData.slot].amount -= amount
         TriggerClientEvent('qb-drugs:client:setDealerItems', -1, itemData, amount, dealer)
     else
-        Player.Functions.RemoveItem(itemData.name, amount)
+        exports.ox_inventory:RemoveItem(src, itemData.name, amount)
         Player.Functions.AddMoney('cash', amount * sharedConfig.dealers[dealer].products[itemData.slot].price)
-        TriggerClientEvent("QBCore:Notify", src, Lang:t("error.item_unavailable"), "error")
+        exports.qbx_core:Notify(src, Lang:t("error.item_unavailable"), "error")
     end
 end)
 
@@ -38,8 +38,7 @@ RegisterNetEvent('qb-drugs:server:giveDeliveryItems', function(deliveryData)
 
     if not item then return end
 
-    Player.Functions.AddItem(item, deliveryData.amount)
-    TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "add")
+    exports.ox_inventory:AddItem(src, item, deliveryData.amount)
 end)
 
 RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTime)
@@ -53,39 +52,38 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
     local payout = deliveryData.itemData.payout * itemAmount
     local copsOnline = exports.qbx_core:GetDutyCountType('leo')
     local curRep = Player.PlayerData.metadata.dealerrep
-    local invItem = Player.Functions.GetItemByName(item)
+    local invItem = exports.ox_inventory:Search(src, 'count', item)
     if inTime then
         if invItem and invItem.amount >= itemAmount then -- on time correct amount
-            Player.Functions.RemoveItem(item, itemAmount)
+            exports.ox_inventory:RemoveItem(src, item, itemAmount)
             if copsOnline > 0 then
                 local copModifier = copsOnline * config.policeDeliveryModifier
                 if config.useMarkedBills then
-                    local info = {worth = math.floor(payout * copModifier)}
-                    Player.Functions.AddItem('markedbills', 1, false, info)
+                    local worth = math.floor(payout * copModifier)
+                    local metadata = { worth = worth, description = "Value: " .. worth }
+                    exports.ox_inventory:AddItem(src, 'markedbills', 1, metadata)
                 else
                     Player.Functions.AddMoney('cash', math.floor(payout * copModifier), 'drug-delivery')
                 end
             else
                 if config.useMarkedBills then
-                    local info = {worth = payout}
-                    Player.Functions.AddItem('markedbills', 1, false, info)
+                    local metadata = { worth = payout, description = "Value: " .. payout }
+                    exports.ox_inventory:AddItem(src, 'markedbills', 1, metadata)
                 else
                     Player.Functions.AddMoney('cash', payout, 'drug-delivery')
                 end
             end
-            TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
-            TriggerClientEvent('QBCore:Notify', src, Lang:t("success.order_delivered"), 'success')
+            exports.qbx_core:Notify(src, Lang:t("success.order_delivered"), 'success')
             SetTimeout(math.random(5000, 10000), function()
                 TriggerClientEvent('qb-drugs:client:sendDeliveryMail', src, 'perfect', deliveryData)
                 Player.Functions.SetMetaData('dealerrep', (curRep + config.deliveryRepGain))
             end)
         else
-            TriggerClientEvent('QBCore:Notify', src, Lang:t("error.order_not_right"), 'error')-- on time incorrect amount
+            exports.qbx_core:Notify(src, Lang:t("error.order_not_right"), 'error')-- on time incorrect amount
             if invItem then
                 local newItemAmount = invItem.amount
                 local modifiedPayout = deliveryData.itemData.payout * newItemAmount
-                Player.Functions.RemoveItem(item, newItemAmount)
-                TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
+                exports.ox_inventory:RemoveItem(src, item, newItemAmount)
                 Player.Functions.AddMoney('cash', math.floor(modifiedPayout / config.wrongAmountFee))
             end
             SetTimeout(math.random(5000, 10000), function()
@@ -99,10 +97,9 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
         end
     else
         if invItem and invItem.amount >= itemAmount then -- late correct amount
-            TriggerClientEvent('QBCore:Notify', src, Lang:t("error.too_late"), 'error')
-            Player.Functions.RemoveItem(item, itemAmount)
+            exports.qbx_core:Notify(src, Lang:t("error.too_late"), 'error')
+            exports.ox_inventory:RemoveItem(src, item, itemAmount)
             Player.Functions.AddMoney('cash', math.floor(payout / config.overdueDeliveryFee), "delivery-drugs-too-late")
-            TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
             SetTimeout(math.random(5000, 10000), function()
                 TriggerClientEvent('qb-drugs:client:sendDeliveryMail', src, 'late', deliveryData)
                 if curRep - 1 > 0 then
@@ -115,10 +112,9 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
             if invItem then -- late incorrect amount
                 local newItemAmount = invItem.amount
                 local modifiedPayout = deliveryData.itemData.payout * newItemAmount
-                TriggerClientEvent('QBCore:Notify', src, Lang:t("error.too_late"), 'error')
-                Player.Functions.RemoveItem(item, itemAmount)
+                exports.qbx_core:Notify(src, Lang:t("error.too_late"), 'error')
+                exports.ox_inventory:RemoveItem(src, item, itemAmount)
                 Player.Functions.AddMoney('cash', math.floor(modifiedPayout / config.overdueDeliveryFee), "delivery-drugs-too-late")
-                TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[item], "remove")
                 SetTimeout(math.random(5000, 10000), function()
                     TriggerClientEvent('qb-drugs:client:sendDeliveryMail', src, 'late', deliveryData)
                     if curRep - 1 > 0 then
@@ -167,15 +163,12 @@ lib.addCommand("newdealer", {
     local time = json.encode({min = minTime, max = maxTime})
     local pos = json.encode({x = coords.x, y = coords.y, z = coords.z})
     local result = MySQL.scalar.await('SELECT name FROM dealers WHERE name = ?', {dealerName})
-    if result then return TriggerClientEvent('QBCore:Notify', source, Lang:t("error.dealer_already_exists"), "error") end
+    if result then return exports.qbx_core:Notify(source, Lang:t("error.dealer_already_exists"), "error") end
     MySQL.insert('INSERT INTO dealers (name, coords, time, createdby) VALUES (?, ?, ?, ?)', {dealerName, pos, time, Player.PlayerData.citizenid}, function()
         sharedConfig.dealers[dealerName] = {
             name = dealerName,
             coords = vec3(coords.x, coords.y, coords.z),
-            time = {
-                min = minTime,
-                max = maxTime
-            },
+            time = { min = minTime, max = maxTime },
             products = config.products
         }
         TriggerClientEvent('qb-drugs:client:RefreshDealers', -1, sharedConfig.dealers)
@@ -200,9 +193,9 @@ lib.addCommand("deletedealer", {
         MySQL.query('DELETE FROM dealers WHERE name = ?', {dealerName})
         sharedConfig.dealers[dealerName] = nil
         TriggerClientEvent('qb-drugs:client:RefreshDealers', -1, sharedConfig.dealers)
-        TriggerClientEvent('QBCore:Notify', source, Lang:t("success.dealer_deleted", {dealerName = dealerName}), "success")
+        exports.qbx_core:Notify(source, Lang:t("success.dealer_deleted", {dealerName = dealerName}), "success")
     else
-        TriggerClientEvent('QBCore:Notify', source, Lang:t("error.dealer_not_exists_command", {dealerName = dealerName}), "error")
+        exports.qbx_core:Notify(source, Lang:t("error.dealer_not_exists_command", {dealerName = dealerName}), "error")
     end
 end)
 
@@ -217,11 +210,12 @@ lib.addCommand("dealers", {
             DealersText = DealersText .. Lang:t("info.list_dealers_name_prefix") .. v.name .. "<br>"
         end
         TriggerClientEvent('chat:addMessage', source, {
+            color = { 0, 0, 255 },
             template = '<div class="chat-message advert"><div class="chat-message-body"><strong>' .. Lang:t("info.list_dealers_title") .. '</strong><br><br> ' .. DealersText .. '</div></div>',
             args = {}
         })
     else
-        TriggerClientEvent('QBCore:Notify', source, Lang:t("error.no_dealers"), 'error')
+        exports.qbx_core:Notify(source, Lang:t("error.no_dealers"), 'error')
     end
 end)
 
@@ -241,9 +235,9 @@ lib.addCommand("dealergoto", {
     if sharedConfig.dealers[DealerName] then
         local ped = GetPlayerPed(source)
         SetEntityCoords(ped, sharedConfig.dealers[DealerName].coords.x, sharedConfig.dealers[DealerName].coords.y, sharedConfig.dealers[DealerName].coords.z, false, false, false, false)
-        TriggerClientEvent('QBCore:Notify', source, Lang:t("success.teleported_to_dealer", {dealerName = DealerName}), 'success')
+        exports.qbx_core:Notify(source, Lang:t("success.teleported_to_dealer", {dealerName = DealerName}), 'success')
     else
-        TriggerClientEvent('QBCore:Notify', source, Lang:t("error.dealer_not_exists"), 'error')
+        exports.qbx_core:Notify(source, Lang:t("error.dealer_not_exists"), 'error')
     end
 end)
 
@@ -260,10 +254,7 @@ CreateThread(function()
             sharedConfig.dealers[data.name] = {
                 name = data.name,
                 coords = vec3(coords.x, coords.y, coords.z),
-                time = {
-                    min = time.min,
-                    max = time.max
-                },
+                time = { min = time.min, max = time.max },
                 products = config.products
             }
         end
