@@ -236,7 +236,6 @@ local function SellToPed(ped)
                             break
                         end
                         if IsControlJustPressed(0, 47) then
-                            exports['qbx-core']:KeyPressed()
                             textDrawn = false
                             exports.qbx_core:Notify(Lang:t("error.offer_declined"), 'error')
                             hasTarget = false
