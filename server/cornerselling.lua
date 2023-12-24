@@ -45,7 +45,7 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
 
     local hasItem = Player.Functions.GetItemByName(item)
     if hasItem.amount >= amount then
-        TriggerClientEvent('QBCore:Notify', src, Lang:t("success.offer_accepted"), 'success')
+        exports.qbx_core:Notify(src, Lang:t("success.offer_accepted"), 'success')
         exports.ox_inventory:RemoveItem(src, item, amount)
         Player.Functions.AddMoney('cash', price, "sold-cornerdrugs")
         TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
