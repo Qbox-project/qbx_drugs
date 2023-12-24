@@ -238,7 +238,7 @@ local function SellToPed(ped)
                         if IsControlJustPressed(0, 47) then
                             exports['qbx-core']:KeyPressed()
                             textDrawn = false
-                            QBCore.Functions.Notify(Lang:t("error.offer_declined"), 'error')
+                            exports.qbx_core:Notify(Lang:t("error.offer_declined"), 'error')
                             hasTarget = false
                             SetPedKeepTask(ped, false)
                             SetEntityAsNoLongerNeeded(ped)
