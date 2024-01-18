@@ -207,7 +207,7 @@ lib.addCommand('dealers', {
         end
         TriggerClientEvent('chat:addMessage', source, {
             color = { 0, 0, 255 },
-            template = '<div class='chat-message advert'><div class='chat-message-body'><strong>' .. Lang:t('info.list_dealers_title') .. '</strong><br><br> ' .. dealersText .. '</div></div>',
+            template = "<div class='chat-message advert'><div class='chat-message-body'><strong>' .. Lang:t('info.list_dealers_title') .. '</strong><br><br> ' .. dealersText .. '</div></div>",
             args = {}
         })
     else
