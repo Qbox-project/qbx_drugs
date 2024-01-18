@@ -1,2 +1,2 @@
 # qbx_drugs
-Drugs Script For QBox Project
+Drug script For QBox
