@@ -183,7 +183,7 @@ local function sellToPed(ped)
                                 onSelect = function()
                                     TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
                                     hasTarget = false
-                                    LoadAnimDict('gestures@f@standing@casual')
+                                    lib.requestAnimDict('gestures@f@standing@casual', 5000)
                                     TaskPlayAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
                                     Wait(650)
                                     ClearPedTasks(cache.ped)
@@ -220,7 +220,7 @@ local function sellToPed(ped)
                             textDrawn = false
                             TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
                             hasTarget = false
-                            LoadAnimDict('gestures@f@standing@casual')
+                            lib.requestAnimDict('gestures@f@standing@casual', 5000)
                             TaskPlayAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
                             Wait(650)
                             ClearPedTasks(cache.ped)
