@@ -25,7 +25,7 @@ end
 
 local function robberyPed()
     if config.useTarget then
-        targetStealingPed = NetworkGetNetworkIdFromEntity(stealingPed)
+        local targetStealingPed = NetworkGetNetworkIdFromEntity(stealingPed)
         local options = {
             {
                 name = 'stealingped',
@@ -173,8 +173,8 @@ local function sellToPed(ped)
                 if pedDist2 < 1.5 and cornerselling then
                     if config.useTarget and not zoneMade then
                         zoneMade = true
-                        targetPedSale = NetworkGetNetworkIdFromEntity(ped)
-                        optionNamesTargetPed = {'selldrugs', 'declineoffer'}
+                        local targetPedSale = NetworkGetNetworkIdFromEntity(ped)
+                        local optionNamesTargetPed = {'selldrugs', 'declineoffer'}
                         local options = {
                             {
                                 name = 'selldrugs',
