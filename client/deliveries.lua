@@ -301,7 +301,7 @@ function InitZones()
     else
         ---@todo Move to ox_lib Zoning
 
-        local dealerPoly = {}
+        --[[ local dealerPoly = {}
         for k, v in pairs(sharedConfig.dealers) do
             dealerPoly[#dealerPoly+1] = BoxZone:Create(vector3(v.coords.x, v.coords.y, v.coords.z), 1.5, 1.5, {
                 heading = -20,
@@ -328,7 +328,9 @@ function InitZones()
                 waitingKeyPress = false
                 lib.hideTextUI()
             end
-        end)
+        end) ]]--
+
+        return
     end
 end
 
