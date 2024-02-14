@@ -104,6 +104,8 @@ end
 
 local function sellToPed(ped)
     hasTarget = true
+    local targetPedSale = NetworkGetNetworkIdFromEntity(ped)
+    local optionNamesTargetPed = {'selldrugs', 'declineoffer'}
 
     for i = 1, #lastPed, 1 do
         if lastPed[i] == ped then
@@ -173,8 +175,6 @@ local function sellToPed(ped)
                 if pedDist2 < 1.5 and cornerselling then
                     if config.useTarget and not zoneMade then
                         zoneMade = true
-                        local targetPedSale = NetworkGetNetworkIdFromEntity(ped)
-                        local optionNamesTargetPed = {'selldrugs', 'declineoffer'}
                         local options = {
                             {
                                 name = 'selldrugs',
