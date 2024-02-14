@@ -21,7 +21,7 @@ RegisterNetEvent('qb-drugs:server:updateDealerItems', function(itemData, amount,
     else
         exports.ox_inventory:RemoveItem(src, itemData.name, amount)
         player.Functions.AddMoney('cash', amount * sharedConfig.dealers[dealer].products[itemData.slot].price)
-        exports.qbx_core:Notify(src, Lang:t('error.item_unavailable'), 'error')
+        exports.qbx_core:Notify(src, locale('error.item_unavailable'), 'error')
     end
 end)
 
@@ -70,13 +70,13 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
                     player.Functions.AddMoney('cash', payout, 'drug-delivery')
                 end
             end
-            exports.qbx_core:Notify(src, Lang:t('success.order_delivered'), 'success')
+            exports.qbx_core:Notify(src, locale('success.order_delivered'), 'success')
             SetTimeout(math.random(5000, 10000), function()
                 TriggerClientEvent('qb-drugs:client:sendDeliveryMail', src, 'perfect', deliveryData)
                 player.Functions.SetMetaData('dealerrep', (curRep + config.deliveryRepGain))
             end)
         else
-            exports.qbx_core:Notify(src, Lang:t('error.order_not_right'), 'error')-- on time incorrect amount
+            exports.qbx_core:Notify(src, locale('error.order_not_right'), 'error')-- on time incorrect amount
             if invItem then
                 local newItemAmount = invItem.amount
                 local modifiedPayout = deliveryData.itemData.payout * newItemAmount
@@ -94,7 +94,7 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
         end
     else
         if invItem and invItem.amount >= itemAmount then -- late correct amount
-            exports.qbx_core:Notify(src, Lang:t('error.too_late'), 'error')
+            exports.qbx_core:Notify(src, locale('error.too_late'), 'error')
             exports.ox_inventory:RemoveItem(src, item, itemAmount)
             player.Functions.AddMoney('cash', math.floor(payout / config.overdueDeliveryFee), 'delivery-drugs-too-late')
             SetTimeout(math.random(5000, 10000), function()
@@ -109,7 +109,7 @@ RegisterNetEvent('qb-drugs:server:successDelivery', function(deliveryData, inTim
             if invItem then -- late incorrect amount
                 local newItemAmount = invItem.amount
                 local modifiedPayout = deliveryData.itemData.payout * newItemAmount
-                exports.qbx_core:Notify(src, Lang:t('error.too_late'), 'error')
+                exports.qbx_core:Notify(src, locale('error.too_late'), 'error')
                 exports.ox_inventory:RemoveItem(src, item, itemAmount)
                 player.Functions.AddMoney('cash', math.floor(modifiedPayout / config.overdueDeliveryFee), 'delivery-drugs-too-late')
                 SetTimeout(math.random(5000, 10000), function()
@@ -127,24 +127,24 @@ end)
 
 
 lib.addCommand('newdealer', {
-    help = Lang:t('info.newdealer_command_desc'),
+    help = locale('info.newdealer_command_desc'),
     params = {
         {
             name = 'name',
             type = 'string',
-            help = Lang:t('info.newdealer_command_help1_help'),
+            help = locale('info.newdealer_command_help1_help'),
             optional = false
         },
         {
             name = 'min',
             type = 'number',
-            help = Lang:t('info.newdealer_command_help2_help'),
+            help = locale('info.newdealer_command_help2_help'),
             optional = false
         },
         {
             name = 'max',
             type = 'number',
-            help = Lang:t('info.newdealer_command_help3_help'),
+            help = locale('info.newdealer_command_help3_help'),
             optional = false
         }
     },
@@ -160,7 +160,7 @@ lib.addCommand('newdealer', {
     local time = json.encode({min = minTime, max = maxTime})
     local pos = json.encode({x = coords.x, y = coords.y, z = coords.z})
     local result = MySQL.scalar.await('SELECT name FROM dealers WHERE name = ?', {dealerName})
-    if result then return exports.qbx_core:Notify(source, Lang:t('error.dealer_already_exists'), 'error') end
+    if result then return exports.qbx_core:Notify(source, locale('error.dealer_already_exists'), 'error') end
     MySQL.insert('INSERT INTO dealers (name, coords, time, createdby) VALUES (?, ?, ?, ?)', {dealerName, pos, time, player.PlayerData.citizenid}, function()
         sharedConfig.dealers[dealerName] = {
             name = dealerName,
@@ -173,12 +173,12 @@ lib.addCommand('newdealer', {
 end)
 
 lib.addCommand('deletedealer', {
-    help = Lang:t('info.newdealer_command_desc'),
+    help = locale('info.newdealer_command_desc'),
     params = {
         {
             name = 'name',
             type = 'string',
-            help = Lang:t('info.deletedealer_command_help1_help'),
+            help = locale('info.deletedealer_command_help1_help'),
             optional = false
         },
     },
@@ -190,9 +190,9 @@ lib.addCommand('deletedealer', {
         MySQL.query('DELETE FROM dealers WHERE name = ?', {dealerName})
         sharedConfig.dealers[dealerName] = nil
         TriggerClientEvent('qb-drugs:client:RefreshDealers', -1, sharedConfig.dealers)
-        exports.qbx_core:Notify(source, Lang:t('success.dealer_deleted', {dealerName = dealerName}), 'success')
+        exports.qbx_core:Notify(source, locale('success.dealer_deleted', dealerName), 'success')
     else
-        exports.qbx_core:Notify(source, Lang:t('error.dealer_not_exists_command', {dealerName = dealerName}), 'error')
+        exports.qbx_core:Notify(source, locale('error.dealer_not_exists_command', dealerName), 'error')
     end
 end)
 
@@ -203,15 +203,15 @@ lib.addCommand('dealers', {
     local dealersText = ''
     if sharedConfig.dealers ~= nil and next(sharedConfig.dealers) ~= nil then
         for _, v in pairs(sharedConfig.dealers) do
-            dealersText = dealersText .. Lang:t('info.list_dealers_name_prefix') .. v.name .. '<br>'
+            dealersText = dealersText .. locale('info.list_dealers_name_prefix') .. v.name .. '<br>'
         end
         TriggerClientEvent('chat:addMessage', source, {
             color = { 0, 0, 255 },
-            template = "<div class='chat-message advert'><div class='chat-message-body'><strong>' .. Lang:t('info.list_dealers_title') .. '</strong><br><br> ' .. dealersText .. '</div></div>",
+            template = "<div class='chat-message advert'><div class='chat-message-body'><strong>' .. locale('info.list_dealers_title') .. '</strong><br><br> ' .. dealersText .. '</div></div>",
             args = {}
         })
     else
-        exports.qbx_core:Notify(source, Lang:t('error.no_dealers'), 'error')
+        exports.qbx_core:Notify(source, locale('error.no_dealers'), 'error')
     end
 end)
 
@@ -221,7 +221,7 @@ lib.addCommand('dealergoto', {
         {
             name = 'name',
             type = 'string',
-            help = Lang:t('info.dealergoto_command_help1_help'),
+            help = locale('info.dealergoto_command_help1_help'),
             optional = false
         },
     },
@@ -231,9 +231,9 @@ lib.addCommand('dealergoto', {
     if sharedConfig.dealers[dealerName] then
         local ped = GetPlayerPed(source)
         SetEntityCoords(ped, sharedConfig.dealers[dealerName].coords.x, sharedConfig.dealers[dealerName].coords.y, sharedConfig.dealers[dealerName].coords.z, false, false, false, false)
-        exports.qbx_core:Notify(source, Lang:t('success.teleported_to_dealer', {dealerName = dealerName}), 'success')
+        exports.qbx_core:Notify(source, locale('success.teleported_to_dealer', dealerName), 'success')
     else
-        exports.qbx_core:Notify(source, Lang:t('error.dealer_not_exists'), 'error')
+        exports.qbx_core:Notify(source, locale('error.dealer_not_exists'), 'error')
     end
 end)
 

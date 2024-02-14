@@ -7,14 +7,13 @@ local function getAvailableDrugs(source)
     if not player then return nil end
 
     for i = 1, #config.cornerSellingDrugsList do
-        ---@todo Check to see if this works
-        local item = exports.ox_inventory:Search(source, 'count', config.cornerSellingDrugsList[i])
-
-        if item then
+        local itemName = config.cornerSellingDrugsList[i]
+        local itemCount = exports.ox_inventory:Search(source, 'count', config.cornerSellingDrugsList[i])
+        if itemCount > 0 then
             availableDrugs[#availableDrugs + 1] = {
-                item = item.name,
-                amount = item.amount,
-                label = exports.ox_inventory:Items()[item.name].label
+                item = itemName,
+                amount = itemCount,
+                label = exports.ox_inventory:Items()[itemName].label
             }
         end
     end
@@ -45,7 +44,7 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
 
     local hasItem = player.Functions.GetItemByName(item)
     if hasItem.amount >= amount then
-        exports.qbx_core:Notify(src, Lang:t('success.offer_accepted'), 'success')
+        exports.qbx_core:Notify(src, locale('success.offer_accepted'), 'success')
         exports.ox_inventory:RemoveItem(src, item, amount)
         player.Functions.AddMoney('cash', price, 'sold-cornerdrugs')
         TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))

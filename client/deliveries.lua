@@ -62,11 +62,11 @@ local function knockDoorAnim(home)
             color = { 255, 0, 0 },
             multiline = true,
             args = {
-                Lang:t('info.dealer_name', {dealerName = sharedConfig.dealers[currentDealer].name}),
-                Lang:t('info.fred_knock_message', {firstName = QBX.PlayerData.charinfo.firstname})
+                locale('info.dealer_name', sharedConfig.dealers[currentDealer].name),
+                locale('info.fred_knock_message', QBX.PlayerData.charinfo.firstname)
             }
         })
-        lib.showTextUI(Lang:t('info.other_dealers_button'), { position = 'left-center' })
+        lib.showTextUI(locale('info.other_dealers_button'), { position = 'left-center' })
         AwaitingInput()
     else
         TriggerServerEvent('InteractSound_SV:PlayOnSource', 'knock_door', 0.2)
@@ -76,7 +76,7 @@ local function knockDoorAnim(home)
         Wait(3500)
         TaskPlayAnim(cache.ped, knockAnimLib, 'exit', 3.0, 3.0, -1, 1, 0, false, false, false)
         Wait(1000)
-        exports.qbx_core:Notify(Lang:t('info.no_one_home'), 'error')
+        exports.qbx_core:Notify(locale('info.no_one_home'), 'error')
     end
 end
 
@@ -129,13 +129,13 @@ local function requestDelivery()
             item = item
         }
 
-        exports.qbx_core:Notify(Lang:t('info.sending_delivery_email'), 'success')
+        exports.qbx_core:Notify(locale('info.sending_delivery_email'), 'success')
         TriggerServerEvent('qb-drugs:server:giveDeliveryItems', waitingDelivery)
         SetTimeout(2000, function()
             TriggerServerEvent('qb-phone:server:sendNewMail', {
                 sender = sharedConfig.dealers[currentDealer].name,
                 subject = 'Delivery Location',
-                message = Lang:t('info.delivery_info_email', {itemAmount = amount, itemLabel = exports.ox_inventory:Items()[waitingDelivery.itemData.item].label}),
+                message = locale('info.delivery_info_email', amount, exports.ox_inventory:Items()[waitingDelivery.itemData.item].label),
                 button = {
                     enabled = true,
                     buttonEvent = 'qb-drugs:client:setLocation',
@@ -144,7 +144,7 @@ local function requestDelivery()
             })
         end)
     else
-        exports.qbx_core:Notify(Lang:t('error.pending_delivery'), 'error')
+        exports.qbx_core:Notify(locale('error.pending_delivery'), 'error')
     end
 end
 
@@ -170,7 +170,7 @@ local function deliverStuff()
         TriggerEvent('animations:client:EmoteCommandStart', {'bumbin'})
         alertPolice()
         if lib.progressCircle({
-            label = Lang:t('info.delivering_products'),
+            label = locale('info.delivering_products'),
             duration = 3500,
             position = 'bottom',
             useWhileDead = false,
@@ -195,7 +195,7 @@ end
 
 local function setMapBlip(x, y)
     SetNewWaypoint(x, y)
-    exports.qbx_core:Notify(Lang:t('success.route_has_been_set'), 'success');
+    exports.qbx_core:Notify(locale('success.route_has_been_set'), 'success');
 end
 
 -- PolyZone specific functions
@@ -242,7 +242,7 @@ function InitZones()
                 options = {
                     {
                         icon = 'fas fa-user-secret',
-                        label = Lang:t('info.target_request'),
+                        label = locale('info.target_request'),
                         action = function()
                             requestDelivery()
                         end,
@@ -272,7 +272,7 @@ function InitZones()
                     },
                     {
                         icon = 'fas fa-user-secret',
-                        label = Lang:t('info.target_openshop'),
+                        label = locale('info.target_openshop'),
                         action = function()
                             openDealerShop()
                         end,
@@ -318,10 +318,10 @@ function InitZones()
         dealerCombo:onPlayerInOut(function(isPointInside)
             if isPointInside then
                 if not dealerIsHome then
-                    lib.showTextUI(Lang:t('info.knock_button'), { position = 'left-center' })
+                    lib.showTextUI(locale('info.knock_button'), { position = 'left-center' })
                     AwaitingInput()
                 elseif dealerIsHome then
-                    lib.showTextUI(Lang:t('info.other_dealers_button'), { position = 'left-center' })
+                    lib.showTextUI(locale('info.other_dealers_button'), { position = 'left-center' })
                     AwaitingInput()
                 end
             else
@@ -352,7 +352,7 @@ end)
 RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
     if activeDelivery then
         setMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
-        exports.qbx_core:Notify(Lang:t('error.pending_delivery'), 'error')
+        exports.qbx_core:Notify(locale('error.pending_delivery'), 'error')
         return
     end
     activeDelivery = locationData
@@ -369,7 +369,7 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
             options = {
                 {
                     icon = 'fas fa-user-secret',
-                    label = Lang:t('info.target_deliver'),
+                    label = locale('info.target_deliver'),
                     onSelect = function()
                         deliverStuff()
                         waitingDelivery = nil
@@ -389,7 +389,7 @@ RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
             debug = false,
             onEnter = function()
                 inDeliveryZone = true
-                lib.showTextUI(Lang:t('info.deliver_items_button', {itemAmount = activeDelivery.amount, itemLabel = exports.ox_inventory:Items()[activeDelivery.itemData.item].label}), {
+                lib.showTextUI(locale('info.deliver_items_button', activeDelivery.amount, exports.ox_inventory:Items()[activeDelivery.itemData.item].label), {
                     position = 'left-center'
                 })
                 CreateThread(function()
@@ -416,19 +416,19 @@ RegisterNetEvent('qb-drugs:client:sendDeliveryMail', function(type, deliveryData
         TriggerServerEvent('qb-phone:server:sendNewMail', {
             sender = sharedConfig.dealers[deliveryData.dealer].name,
             subject = 'Delivery',
-            message = Lang:t('info.perfect_delivery', {dealerName = sharedConfig.dealers[deliveryData.dealer].name})
+            message = locale('info.perfect_delivery', sharedConfig.dealers[deliveryData.dealer].name)
         })
     elseif type == 'bad' then
         TriggerServerEvent('qb-phone:server:sendNewMail', {
             sender = sharedConfig.dealers[deliveryData.dealer].name,
             subject = 'Delivery',
-            message = Lang:t('info.bad_delivery')
+            message = locale('info.bad_delivery')
         })
     elseif type == 'late' then
         TriggerServerEvent('qb-phone:server:sendNewMail', {
             sender = sharedConfig.dealers[deliveryData.dealer].name,
             subject = 'Delivery',
-            message = Lang:t('info.late_delivery')
+            message = locale('info.late_delivery')
         })
     end
 end)
