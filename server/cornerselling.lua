@@ -8,7 +8,7 @@ local function getAvailableDrugs(source)
 
     for i = 1, #config.cornerSellingDrugsList do
         local itemName = config.cornerSellingDrugsList[i]
-        local itemCount = exports.ox_inventory:Search(source, 'count', config.cornerSellingDrugsList[i])
+        local itemCount = exports.ox_inventory:Search(source, 'count', itemName)
         if itemCount > 0 then
             availableDrugs[#availableDrugs + 1] = {
                 item = itemName,
