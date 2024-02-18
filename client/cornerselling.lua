@@ -276,7 +276,7 @@ local function toggleSelling()
             while cornerselling do
                 local coords = GetEntityCoords(cache.ped)
                 if not hasTarget then
-                    local closestPed = (lib.getClosestPed(coords, 15.0))
+                    local closestPed = lib.getClosestPed(coords, 15.0)
                     if closestPed ~= nil and not IsPedInAnyVehicle(closestPed, false) and GetPedType(closestPed) ~= 28 then
                         sellToPed(closestPed)
                     end
