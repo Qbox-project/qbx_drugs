@@ -4,7 +4,6 @@ local hasTarget = false
 local lastPed = {}
 local stealingPed = nil
 local stealData = {}
-local availableDrugs = {}
 local currentOfferDrug = nil
 local CurrentCops = 0
 local textDrawn = false
@@ -14,13 +13,7 @@ local function tooFarAway()
     exports.qbx_core:Notify(locale('error.too_far_away'), 'error')
     cornerselling = false
     hasTarget = false
-    availableDrugs = {}
-end
-
-local function alertPolice()
-    if config.policeCallChance <= math.random(1, 100) then
-        TriggerServerEvent('police:server:policeAlert', 'Drug sale in progress')
-    end
+    currentOfferDrug = nil
 end
 
 local function robberyPed()
@@ -76,6 +69,7 @@ local function robberyPed()
                             lib.showTextUI(locale('info.pick_up_button'))
                         end
                         if IsControlJustReleased(0, 38) then
+                            lib.hideTextUI()
                             textDrawn = false
                             lib.requestAnimDict('pickup_object')
                             TaskPlayAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
@@ -115,19 +109,15 @@ local function sellToPed(ped)
     end
 
     local successChance = math.random(1, 100)
-    local scamChance = math.random(1, 100)
     local getRobbed = math.random(1, 100)
     if successChance <= config.successChance then hasTarget = false return end
 
-    local drugType = math.random(1, #availableDrugs)
-    local bagAmount = math.random(1, availableDrugs[drugType].amount)
-    if bagAmount > 15 then bagAmount = math.random(9, 15) end
+    currentOfferDrug = lib.callback.await('qb-drugs:server:getDrugOffer', false)
 
-    currentOfferDrug = availableDrugs[drugType]
-
-    local ddata = config.drugsPrice[currentOfferDrug.item]
-    local randomPrice = math.random(ddata.min, ddata.max) * bagAmount
-    if scamChance <= config.scamChance then randomPrice = math.random(3, 10) * bagAmount end
+    if currentOfferDrug == nil then
+        exports.qbx_core:Notify(locale('error.no_drugs_left'), 'error')
+        return
+    end
 
     SetEntityAsNoLongerNeeded(ped)
     ClearPedTasks(ped)
@@ -155,13 +145,13 @@ local function sellToPed(ped)
             local pedCoords2 = GetEntityCoords(ped)
             local pedDist2 = #(coords2 - pedCoords2)
             if getRobbed <= config.robberyChance then
-                TriggerServerEvent('qb-drugs:server:robCornerDrugs', drugType, bagAmount)
-                exports.qbx_core:Notify(locale('info.has_been_robbed', bagAmount, availableDrugs[drugType].label))
+                TriggerServerEvent('qb-drugs:server:robCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount)
+                exports.qbx_core:Notify(locale('info.has_been_robbed', currentOfferDrug.amount, currentOfferDrug.chosen.label))
                 stealingPed = ped
                 stealData = {
-                    item = availableDrugs[drugType].item,
-                    drugType = drugType,
-                    amount = bagAmount,
+                    item = currentOfferDrug.chosen.item,
+                    drugType = currentOfferDrug.idx,
+                    amount = currentOfferDrug.amount,
                 }
                 hasTarget = false
                 local moveTo = GetEntityCoords(cache.ped)
@@ -179,9 +169,10 @@ local function sellToPed(ped)
                             {
                                 name = 'selldrugs',
                                 icon = 'fas fa-hand-holding-dollar',
-                                label = locale('info.target_drug_offer', bagAmount, currentOfferDrug.label, randomPrice),
+                                label = locale('info.target_drug_offer', currentOfferDrug.amount, currentOfferDrug.chosen.label, currentOfferDrug.total),
                                 onSelect = function()
-                                    TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
+                                    TriggerServerEvent('qb-drugs:server:sellCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount, currentOfferDrug.total)
+                                    currentOfferDrug = nil
                                     hasTarget = false
                                     lib.requestAnimDict('gestures@f@standing@casual', 5000)
                                     TaskPlayAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
@@ -192,7 +183,6 @@ local function sellToPed(ped)
                                     ClearPedTasksImmediately(ped)
                                     lastPed[#lastPed + 1] = ped
                                     exports.ox_target:removeEntity(targetPedSale, optionNamesTargetPed)
-                                    alertPolice()
                                 end,
                             },
                             {
@@ -200,6 +190,7 @@ local function sellToPed(ped)
                                 icon = 'fas fa-x',
                                 label = locale('info.decline_offer'),
                                 onSelect = function()
+                                    currentOfferDrug = nil
                                     exports.qbx_core:Notify(locale('error.offer_declined'), 'error')
                                     hasTarget = false
                                     SetPedKeepTask(ped, false)
@@ -214,12 +205,12 @@ local function sellToPed(ped)
                     elseif not config.useTarget then
                         if not textDrawn then
                             textDrawn = true
-                            lib.showTextUI(locale('info.drug_offer', bagAmount, currentOfferDrug.label, randomPrice))
+                            lib.showTextUI(locale('info.drug_offer', currentOfferDrug.amount, currentOfferDrug.chosen.label, currentOfferDrug.total))
                         end
                         if IsControlJustPressed(0, 38) then
                             lib.hideTextUI()
                             textDrawn = false
-                            TriggerServerEvent('qb-drugs:server:sellCornerDrugs', drugType, bagAmount, randomPrice)
+                            TriggerServerEvent('qb-drugs:server:sellCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount, currentOfferDrug.total)
                             hasTarget = false
                             lib.requestAnimDict('gestures@f@standing@casual', 5000)
                             TaskPlayAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
@@ -299,9 +290,8 @@ end
 -- Events
 RegisterNetEvent('qb-drugs:client:cornerselling', function()
     if CurrentCops >= config.minimumDrugSalePolice then
-        local result = lib.callback.await('qb-drugs:server:getAvailableDrugs', false)
-        if result then
-            availableDrugs = result
+        local hasDrugs = lib.callback.await('qb-drugs:server:getDrugOffer', false) ~= nil and true or false
+        if hasDrugs then
             toggleSelling()
         else
             exports.qbx_core:Notify(locale('error.has_no_drugs'), 'error')
@@ -318,12 +308,4 @@ end)
 
 RegisterNetEvent('police:SetCopCount', function(amount)
     CurrentCops = amount
-end)
-
-RegisterNetEvent('qb-drugs:client:refreshAvailableDrugs', function(items)
-    availableDrugs = items
-    if availableDrugs == nil or #availableDrugs <= 0 then
-        exports.qbx_core:Notify(locale('error.no_drugs_left'), 'error')
-        cornerselling = false
-    end
 end)

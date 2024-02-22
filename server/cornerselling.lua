@@ -20,8 +20,19 @@ local function getAvailableDrugs(source)
     return table.type(availableDrugs) ~= 'empty' and availableDrugs or nil
 end
 
-lib.callback.register('qb-drugs:server:getAvailableDrugs', function(source)
-    return getAvailableDrugs(source)
+lib.callback.register('qb-drugs:server:getDrugOffer', function(source)
+    local player = exports.qbx_core:GetPlayer(source)
+    if not player then return nil end
+    local availableDrugs = getAvailableDrugs(player.PlayerData.source)
+    if availableDrugs == nil then return nil end
+
+    local randomDrug = math.random(1, #availableDrugs)
+    local chosenDrug = availableDrugs[randomDrug]
+    local offeredAmount = math.random(1, chosenDrug.amount > 15 and 15 or chosenDrug.amount)
+    local basePrice = math.random(config.cornerSellingDrugsPrice[chosenDrug.item].min, config.cornerSellingDrugsPrice[chosenDrug.item].max)
+    local totalPrice = config.scamChance >= math.random(1, 100) and basePrice * offeredAmount or math.random(3, 10) * offeredAmount
+
+    return { chosen = chosenDrug, idx = randomDrug, amount = offeredAmount, total = totalPrice }
 end)
 
 RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
@@ -34,9 +45,8 @@ RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
 end)
 
 RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, price)
-    local src = source
-    local player = exports.qbx_core:GetPlayer(src)
-    local availableDrugs = getAvailableDrugs(src)
+    local player = exports.qbx_core:GetPlayer(source)
+    local availableDrugs = getAvailableDrugs(player.PlayerData.source)
 
     if not availableDrugs or not player then return end
 
@@ -44,24 +54,25 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
 
     local hasItem = player.Functions.GetItemByName(item)
     if hasItem.amount >= amount then
-        exports.qbx_core:Notify(src, locale('success.offer_accepted'), 'success')
-        exports.ox_inventory:RemoveItem(src, item, amount)
+        exports.qbx_core:Notify(player.PlayerData.source, locale('success.offer_accepted'), 'success')
+        exports.ox_inventory:RemoveItem(player.PlayerData.source, item, amount)
         player.Functions.AddMoney('cash', price, 'sold-cornerdrugs')
-        TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
+        if config.policeCallChance >= math.random(1, 100) then
+            TriggerEvent('police:server:policeAlert', locale('info.possible_drug_dealing'))
+        end
     else
-        TriggerClientEvent('qb-drugs:client:cornerselling', src)
+        TriggerClientEvent('qb-drugs:client:cornerselling', player.PlayerData.source)
     end
 end)
 
 RegisterNetEvent('qb-drugs:server:robCornerDrugs', function(drugType, amount)
-    local src = source
-    local player = exports.qbx_core:GetPlayer(src)
-    local availableDrugs = getAvailableDrugs(src)
+    local player = exports.qbx_core:GetPlayer(source)
+    local availableDrugs = getAvailableDrugs(player.PlayerData.source)
 
     if not availableDrugs or not player then return end
 
     local item = availableDrugs[drugType].item
 
-    exports.ox_inventory:RemoveItem(src, item, amount)
-    TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', src, getAvailableDrugs(src))
+    exports.ox_inventory:RemoveItem(player.PlayerData.source, item, amount)
+    TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', player.PlayerData.source, getAvailableDrugs(player.PlayerData.source))
 end)
