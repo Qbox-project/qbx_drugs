@@ -58,7 +58,7 @@ RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, p
         exports.ox_inventory:RemoveItem(player.PlayerData.source, item, amount)
         player.Functions.AddMoney('cash', price, 'sold-cornerdrugs')
         if config.policeCallChance >= math.random(1, 100) then
-            TriggerEvent('police:server:policeAlert', locale('info.possible_drug_dealing'))
+            TriggerEvent('police:server:policeAlert', locale('info.possible_drug_dealing'), nil, player.PlayerData.source)
         end
     else
         TriggerClientEvent('qb-drugs:client:cornerselling', player.PlayerData.source)
@@ -74,5 +74,4 @@ RegisterNetEvent('qb-drugs:server:robCornerDrugs', function(drugType, amount)
     local item = availableDrugs[drugType].item
 
     exports.ox_inventory:RemoveItem(player.PlayerData.source, item, amount)
-    TriggerClientEvent('qb-drugs:client:refreshAvailableDrugs', player.PlayerData.source, getAvailableDrugs(player.PlayerData.source))
 end)
