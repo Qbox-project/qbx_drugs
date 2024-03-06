@@ -9,6 +9,17 @@ lib.callback.register('qb-drugs:server:RequestConfig', function()
     return sharedConfig.dealers
 end)
 
+RegisterNetEvent('qb-drugs:server:randomPoliceAlert', function()
+    local src = source
+    local player = exports.qbx_core:GetPlayer(src)
+
+    if not player then return end
+
+    if config.policeCallChance >= math.random(1, 100) then
+        TriggerEvent('police:server:policeAlert', locale('info.possible_drug_dealing'), nil, player.PlayerData.source)
+    end
+end)
+
 RegisterNetEvent('qb-drugs:server:updateDealerItems', function(itemData, amount, dealer)
     local src = source
     local player = exports.qbx_core:GetPlayer(src)

@@ -158,17 +158,11 @@ local function deliveryTimer()
     end)
 end
 
-local function alertPolice()
-    if config.policeCallChance <= math.random(1, 100) then
-        TriggerServerEvent('police:server:policeAlert', 'Suspicous activity')
-    end
-end
-
 local function deliverStuff()
     if deliveryTimeout > 0 then
         Wait(500)
         TriggerEvent('animations:client:EmoteCommandStart', {'bumbin'})
-        alertPolice()
+        TriggerServerEvent('qb-drugs:server:randomPoliceAlert')
         if lib.progressCircle({
             label = locale('info.delivering_products'),
             duration = 3500,
