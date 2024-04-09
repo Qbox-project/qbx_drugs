@@ -290,7 +290,7 @@ end
 -- Events
 RegisterNetEvent('qb-drugs:client:cornerselling', function()
     if CurrentCops >= config.minimumDrugSalePolice then
-        local hasDrugs = lib.callback.await('qb-drugs:server:getDrugOffer', false) ~= nil and true or false
+        local hasDrugs = not not lib.callback.await('qb-drugs:server:getDrugOffer', false)
         if hasDrugs then
             toggleSelling()
         else
