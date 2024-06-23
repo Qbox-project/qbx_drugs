@@ -25,8 +25,7 @@ local function robberyPed()
                 icon = 'fas fa-magnifying-glass',
                 label = locale('info.search_ped'),
                 onSelect = function()
-                    lib.requestAnimDict('pickup_object')
-                    TaskPlayAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
+                    lib.playAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
                     Wait(2000)
                     ClearPedTasks(cache.ped)
                     TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
@@ -71,8 +70,7 @@ local function robberyPed()
                         if IsControlJustReleased(0, 38) then
                             lib.hideTextUI()
                             textDrawn = false
-                            lib.requestAnimDict('pickup_object')
-                            TaskPlayAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
+                            lib.playAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
                             Wait(2000)
                             ClearPedTasks(cache.ped)
                             TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
@@ -174,8 +172,7 @@ local function sellToPed(ped)
                                     TriggerServerEvent('qb-drugs:server:sellCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount, currentOfferDrug.total)
                                     currentOfferDrug = nil
                                     hasTarget = false
-                                    lib.requestAnimDict('gestures@f@standing@casual', 5000)
-                                    TaskPlayAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
+                                    lib.playAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
                                     Wait(650)
                                     ClearPedTasks(cache.ped)
                                     SetPedKeepTask(ped, false)
@@ -212,8 +209,7 @@ local function sellToPed(ped)
                             textDrawn = false
                             TriggerServerEvent('qb-drugs:server:sellCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount, currentOfferDrug.total)
                             hasTarget = false
-                            lib.requestAnimDict('gestures@f@standing@casual', 5000)
-                            TaskPlayAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
+                            lib.playAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
                             Wait(650)
                             ClearPedTasks(cache.ped)
                             SetPedKeepTask(ped, false)

@@ -52,10 +52,9 @@ local function knockDoorAnim(home)
     if home then
         TriggerServerEvent('InteractSound_SV:PlayOnSource', 'knock_door', 0.2)
         Wait(100)
-        lib.requestAnimDict(knockAnimLib)
-        TaskPlayAnim(cache.ped, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
+        lib.playAnim(cache.ped, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
         Wait(3500)
-        TaskPlayAnim(cache.ped, knockAnimLib, 'exit', 3.0, 3.0, -1, 1, 0, false, false, false)
+        lib.playAnim(cache.ped, knockAnimLib, 'exit', 3.0, 3.0, -1, 1, 0, false, false, false)
         Wait(1000)
         dealerIsHome = true
         TriggerEvent('chat:addMessage', {
@@ -71,10 +70,9 @@ local function knockDoorAnim(home)
     else
         TriggerServerEvent('InteractSound_SV:PlayOnSource', 'knock_door', 0.2)
         Wait(100)
-        lib.requestAnimDict(knockAnimLib)
-        TaskPlayAnim(cache.ped, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
+        lib.playAnim(cache.ped, knockAnimLib, knockAnim, 3.0, 3.0, -1, 1, 0, false, false, false )
         Wait(3500)
-        TaskPlayAnim(cache.ped, knockAnimLib, 'exit', 3.0, 3.0, -1, 1, 0, false, false, false)
+        lib.playAnim(cache.ped, knockAnimLib, 'exit', 3.0, 3.0, -1, 1, 0, false, false, false)
         Wait(1000)
         exports.qbx_core:Notify(locale('info.no_one_home'), 'error')
     end
