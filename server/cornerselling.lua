@@ -41,7 +41,7 @@ RegisterNetEvent('qb-drugs:server:giveStealItems', function(drugType, amount)
 
     if not availableDrugs or not player then return end
 
-    exports.ox_inventory:AddItem(source, availableDrugs[drugType].item, amount)
+    exports.ox_inventory:AddItem(player.PlayerData.source, availableDrugs[drugType].item, amount)
 end)
 
 RegisterNetEvent('qb-drugs:server:sellCornerDrugs', function(drugType, amount, price)
