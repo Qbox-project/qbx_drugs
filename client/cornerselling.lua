@@ -28,7 +28,7 @@ local function robberyPed()
                     lib.playAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
                     Wait(2000)
                     ClearPedTasks(cache.ped)
-                    TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
+                    TriggerServerEvent('qb-drugs:server:giveStealItems')
                     TriggerEvent('inventory:client:ItemBox', exports.ox_inventory:Items()[stealData.item], 'add')
                     stealingPed = nil
                     stealData = {}
@@ -73,7 +73,7 @@ local function robberyPed()
                             lib.playAnim(cache.ped, 'pickup_object', 'pickup_low', 8.0, -8.0, -1, 1, 0, false, false, false)
                             Wait(2000)
                             ClearPedTasks(cache.ped)
-                            TriggerServerEvent('qb-drugs:server:giveStealItems', stealData.drugType, stealData.amount)
+                            TriggerServerEvent('qb-drugs:server:giveStealItems')
                             TriggerEvent('inventory:client:ItemBox', exports.ox_inventory:Items()[stealData.item], 'add')
                             stealingPed = nil
                             stealData = {}
@@ -143,7 +143,7 @@ local function sellToPed(ped)
             local pedCoords2 = GetEntityCoords(ped)
             local pedDist2 = #(coords2 - pedCoords2)
             if getRobbed <= config.robberyChance then
-                TriggerServerEvent('qb-drugs:server:robCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount)
+                TriggerServerEvent('qb-drugs:server:robCornerDrugs')
                 exports.qbx_core:Notify(locale('info.has_been_robbed', currentOfferDrug.amount, currentOfferDrug.chosen.label))
                 stealingPed = ped
                 stealData = {
@@ -169,7 +169,7 @@ local function sellToPed(ped)
                                 icon = 'fas fa-hand-holding-dollar',
                                 label = locale('info.target_drug_offer', currentOfferDrug.amount, currentOfferDrug.chosen.label, currentOfferDrug.total),
                                 onSelect = function()
-                                    TriggerServerEvent('qb-drugs:server:sellCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount, currentOfferDrug.total)
+                                    TriggerServerEvent('qb-drugs:server:sellCornerDrugs')
                                     currentOfferDrug = nil
                                     hasTarget = false
                                     lib.playAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
@@ -207,7 +207,7 @@ local function sellToPed(ped)
                         if IsControlJustPressed(0, 38) then
                             lib.hideTextUI()
                             textDrawn = false
-                            TriggerServerEvent('qb-drugs:server:sellCornerDrugs', currentOfferDrug.idx, currentOfferDrug.amount, currentOfferDrug.total)
+                            TriggerServerEvent('qb-drugs:server:sellCornerDrugs')
                             hasTarget = false
                             lib.playAnim(cache.ped, 'gestures@f@standing@casual', 'gesture_point', 3.0, 3.0, -1, 49, 0, false, false, false)
                             Wait(650)
