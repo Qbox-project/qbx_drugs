@@ -116,7 +116,7 @@ local function requestDelivery()
             TriggerServerEvent('qb-phone:server:sendNewMail', {
                 sender = sharedConfig.dealers[currentDealer].name,
                 subject = 'Delivery Location',
-                message = locale('info.delivery_info_email', amount, exports.ox_inventory:Items()[waitingDelivery.itemData.item].label),
+                message = locale('info.delivery_info_email', waitingDelivery.amount, exports.ox_inventory:Items()[waitingDelivery.itemData.item].label),
                 button = {
                     enabled = true,
                     buttonEvent = 'qb-drugs:client:setLocation',
