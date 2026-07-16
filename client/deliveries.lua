@@ -21,6 +21,7 @@ end)
 
 local function getClosestDealer()
     local pCoords = GetEntityCoords(cache.ped)
+    currentDealer = nil
     for k, v in pairs(sharedConfig.dealers) do
         local dealerCoords = vector3(v.coords.x, v.coords.y, v.coords.z)
         if #(pCoords - dealerCoords) < 2 then
@@ -100,40 +101,22 @@ local function knockDealerDoor()
     end
 end
 
-local function randomDeliveryItemOnRep()
-    local myRep = QBX.PlayerData.metadata.dealerrep
-    local availableItems = {}
-    for k in pairs(sharedConfig.deliveryItems) do
-        if sharedConfig.deliveryItems[k].minrep <= myRep then
-            availableItems[#availableItems+1] = k
-        end
-    end
-    return availableItems[math.random(1, #availableItems)]
-end
-
 local function requestDelivery()
     if not waitingDelivery then
         getClosestDealer()
-        local location = math.random(1, #config.deliveryLocations)
-        local amount = math.random(1, 3)
-        local item = randomDeliveryItemOnRep()
+        if not currentDealer then return end
 
-        waitingDelivery = {
-            coords = config.deliveryLocations[location].coords,
-            locationLabel = config.deliveryLocations[location].label,
-            amount = amount,
-            dealer = currentDealer,
-            itemData = sharedConfig.deliveryItems[item],
-            item = item
-        }
+        waitingDelivery = lib.callback.await('qb-drugs:server:requestDelivery', false, currentDealer)
+        if not waitingDelivery then
+            return exports.qbx_core:Notify(locale('error.pending_delivery'), 'error')
+        end
 
         exports.qbx_core:Notify(locale('info.sending_delivery_email'), 'success')
-        TriggerServerEvent('qb-drugs:server:giveDeliveryItems', waitingDelivery)
         SetTimeout(2000, function()
             TriggerServerEvent('qb-phone:server:sendNewMail', {
                 sender = sharedConfig.dealers[currentDealer].name,
                 subject = 'Delivery Location',
-                message = locale('info.delivery_info_email', amount, exports.ox_inventory:Items()[waitingDelivery.itemData.item].label),
+                message = locale('info.delivery_info_email', waitingDelivery.amount, exports.ox_inventory:Items()[waitingDelivery.itemData.item].label),
                 button = {
                     enabled = true,
                     buttonEvent = 'qb-drugs:client:setLocation',
@@ -169,7 +152,7 @@ local function deliverStuff()
             canCancel = true,
             disable = { car = true, move = true, combat = true }
         }) then
-            TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, true)
+            TriggerServerEvent('qb-drugs:server:successDelivery')
             activeDelivery = nil
             if config.useTarget then
                 exports.ox_target:removeZone('drugDeliveryZone')
@@ -180,7 +163,7 @@ local function deliverStuff()
             ClearPedTasks(cache.ped)
         end
     else
-        TriggerServerEvent('qb-drugs:server:successDelivery', activeDelivery, false)
+        TriggerServerEvent('qb-drugs:server:successDelivery')
     end
     deliveryTimeout = 0
 end
