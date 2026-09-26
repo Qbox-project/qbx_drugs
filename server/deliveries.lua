@@ -75,7 +75,7 @@ lib.callback.register('qb-drugs:server:requestDelivery', function(source, dealer
         if storedItem and storedLocation and type(stored.amount) == 'number'
             and stored.amount % 1 == 0 and stored.amount >= 1 and stored.amount <= 3
             and type(stored.dealer) == 'string' and sharedConfig.dealers[stored.dealer]
-            and type(stored.startedAt) == 'number' then
+            and (stored.startedAt == nil or type(stored.startedAt) == 'number') then
             local delivery = {
                 coords = storedLocation.coords,
                 locationLabel = storedLocation.label,
@@ -117,7 +117,6 @@ lib.callback.register('qb-drugs:server:requestDelivery', function(source, dealer
 
     activeDeliveries[source] = {
         data = delivery,
-        startedAt = os.time(),
     }
     player.Functions.SetMetaData('drugdelivery', {
         item = itemIndex,
@@ -129,11 +128,25 @@ lib.callback.register('qb-drugs:server:requestDelivery', function(source, dealer
     return delivery
 end)
 
+lib.callback.register('qb-drugs:server:startDelivery', function(source)
+    local player = exports.qbx_core:GetPlayer(source)
+    local delivery = activeDeliveries[source]
+    if not player or not delivery then return end
+
+    if not delivery.startedAt then
+        delivery.startedAt = os.time()
+        local stored = player.PlayerData.metadata.drugdelivery
+        stored.startedAt = delivery.startedAt
+        player.Functions.SetMetaData('drugdelivery', stored)
+    end
+    return delivery.data, math.max(0, 300 - (os.time() - delivery.startedAt))
+end)
+
 RegisterNetEvent('qb-drugs:server:successDelivery', function()
     local src = source
     local player = exports.qbx_core:GetPlayer(src)
     local delivery = activeDeliveries[src]
-    if not player or not delivery or not isPlayerNear(src, delivery.data.coords, 4.0) then return end
+    if not player or not delivery or not delivery.startedAt or not isPlayerNear(src, delivery.data.coords, 4.0) then return end
 
     activeDeliveries[src] = nil
     player.Functions.SetMetaData('drugdelivery', nil)
