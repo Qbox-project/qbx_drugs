@@ -326,14 +326,16 @@ RegisterNetEvent('qb-drugs:client:setDealerItems', function(itemData, amount, de
     sharedConfig.dealers[dealer].products[itemData.slot].amount = sharedConfig.dealers[dealer].products[itemData.slot].amount - amount
 end)
 
-RegisterNetEvent('qb-drugs:client:setLocation', function(locationData)
+RegisterNetEvent('qb-drugs:client:setLocation', function()
     if activeDelivery then
         setMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
         exports.qbx_core:Notify(locale('error.pending_delivery'), 'error')
         return
     end
-    activeDelivery = locationData
-    deliveryTimeout = 300
+    local delivery, remainingTime = lib.callback.await('qb-drugs:server:startDelivery', false)
+    if not delivery then return end
+    activeDelivery = delivery
+    deliveryTimeout = remainingTime
     deliveryTimer()
     setMapBlip(activeDelivery.coords.x, activeDelivery.coords.y)
     if config.useTarget then
